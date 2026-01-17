@@ -1,4 +1,4 @@
-export default class Player {
+export default class Turret {
     constructor(scene, dome, ppm, missileGroup) {
         this.scene = scene;
         this.dome = dome;
@@ -90,3 +90,4 @@ export default class Player {
         return meters * this.PPM;
     }
 }
+
