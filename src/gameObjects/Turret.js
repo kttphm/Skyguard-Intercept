@@ -1,18 +1,20 @@
-export default class Turret {
-    constructor(scene, dome, ppm, missileGroup) {
-        this.scene = scene;
-        this.dome = dome;
-        this.PPM = ppm;
+export default class Turret extends Phaser.Physics.Arcade.Sprite
+{
+    constructor(scene, x, y, PPM, missileGroup) {
+        super(scene, x, y, 'turrettop');
+
+        scene.add.existing(this);
+
+        this.PPM = PPM;
         this.missileGroup = missileGroup;
-        
         this.launchAngle = 0;
         this.angleDelayShift = 120; // ms delay when Shift is held
         this.angleDelayNormal = 10; // ms delay otherwise
         this.nextAngleStepAt = 0;
 
         // Missile speeds in m/s (meters per second)
-        this.missileTypes = ['light', 'standard', 'heavy'];
-        this.missileSpeeds = { light: 100, standard: 150, heavy: 200 }; // m/s
+        this.missileTypes = ['light', 'standard', 'heavy', 'test'];
+        this.missileSpeeds = { light: 100, standard: 150, heavy: 200 , test: 1000}; // m/s
         this.currentMissileIndex = 1;
 
         // Input keys
@@ -24,6 +26,7 @@ export default class Turret {
         this.handleAngleInput();
         this.handleMissileInput();
         this.handleLaunchMissile();
+        this.handleTurretRotation();
     }
 
     handleAngleInput() {
@@ -50,16 +53,27 @@ export default class Turret {
     }
 
     handleLaunchMissile() {
+        const turretBarrel = 31; // 25.6
+
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-            // Get missile speed in m/s and convert to pixels/s
             const missileSpeedMs = this.missileSpeeds[this.missileTypes[this.currentMissileIndex]]; // m/s
             const missileSpeedPx = this.metersToPixels(missileSpeedMs); // pixels/s
             
             const angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
             
-            // Position in pixels (Phaser uses pixels)
-            const missile = this.scene.physics.add.sprite(this.dome.x, this.dome.y, 'missile');
-            
+            let missileX, missileY;
+
+            if (this.launchAngle > 90) {
+                missileX = this.x + Math.cos(angleInRadians + 0.14889) * turretBarrel;
+                missileY = this.y + Math.sin(angleInRadians + 0.14889) * turretBarrel;
+            }
+            else {
+                missileX = this.x + Math.cos(angleInRadians - 0.14889) * turretBarrel;
+                missileY = this.y + Math.sin(angleInRadians - 0.14889) * turretBarrel;    
+            }
+
+            const missile = this.scene.physics.add.sprite(missileX, missileY, 'missile');
+
             // Add missile to group for tracking and cleanup
             this.missileGroup.add(missile);
             
@@ -70,6 +84,23 @@ export default class Turret {
             missile.setVelocity(velocityX, velocityY);
             missile.setRotation(angleInRadians);
         }
+    }
+
+    handleTurretRotation() {
+        let angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
+
+        this.setFlipY(this.launchAngle > 90);
+        
+        const baseX = this.displayWidth / 2;
+        const baseY = this.displayHeight / 2;
+
+        if (this.flipY) {
+            this.setDisplayOrigin(baseX - 9, baseY - 4);
+        } else {
+            this.setDisplayOrigin(baseX - 9, baseY + 4);
+        }
+
+        this.setRotation(angleInRadians);
     }
 
     // Getters for UI updates
@@ -90,4 +121,3 @@ export default class Turret {
         return meters * this.PPM;
     }
 }
-
