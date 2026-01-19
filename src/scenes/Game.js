@@ -1,4 +1,5 @@
 import Turret from '../gameObjects/Turret.js';
+import Enemy from '../gameObjects/Enemy.js';
 
 export default class Game extends Phaser.Scene {
 
@@ -9,11 +10,26 @@ export default class Game extends Phaser.Scene {
     create() {
         this.PPM = 10;
         this.life = 5;
-        
-        this.missiles = this.physics.add.group();
+        this.physics.world.gravity.y = 9.8 * this.PPM;
+
+        this.enemies = this.physics.add.group();
+        this.houses = this.physics.add.group();
 
         this.initMap();
         this.initText();
+
+        this.ground.body.setAllowGravity(false);
+        this.dome.body.setAllowGravity(false);
+        this.houses.children.iterate((house) => {
+        if (!house) return;
+            house.body.setAllowGravity(false);
+        });
+
+        this.spawnEnemy();
+        this.spawnEnemy();
+        this.spawnEnemy();
+        this.spawnEnemy();
+        this.spawnEnemy();
     }
 
     update() {
@@ -42,17 +58,17 @@ export default class Game extends Phaser.Scene {
 
         // draw background, ground, dome
         const background = this.add.image(centerX, canvas_H/2, 'background');
-        const ground = this.physics.add.sprite(centerX, canvas_H - ground_H/2, 'ground');
-        const dome = this.dome = this.physics.add.sprite(centerX, ground_lv - dome_R/2, 'dome');
+        this.ground = this.physics.add.sprite(centerX, canvas_H - ground_H/2, 'ground');
+        this.dome = this.dome = this.physics.add.sprite(centerX, ground_lv - dome_R/2, 'dome');
 
         // draw house
         const houseY = canvas_H - ground_H - house_H / 2;
-
         this.spawnHouses(centerX - 100, houseY);
         this.spawnHouses(centerX + 40, houseY);
         
-        // draw turret base
+        // draw turret
         this.add.image(centerX, ground_lv - turretbase_H/2, 'turretbase');
+        this.missiles = this.physics.add.group();
         this.turret = new Turret(this, centerX, ground_lv - turretbase_H, this.PPM, this.missiles);
     }
 
@@ -62,6 +78,10 @@ export default class Game extends Phaser.Scene {
         this.lifeText = this.add.text(20, 20, `Life : `, textStyle); //`Life : ${this.life}`
         this.angleText = this.add.text(20, 50, `Launch angle : `, textStyle); //`Launch angle : ${this.turret.getLaunchAngle()}`
         this.missileText = this.add.text(20, 80, `Missile : `, textStyle); //`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`
+    }
+
+    spawnEnemy() {
+        this.enemy = new Enemy(this, this.houses, this.PPM)
     }
 
     cleanupMissiles() {
@@ -91,7 +111,8 @@ export default class Game extends Phaser.Scene {
         let x = startX;
 
         for (let i = 0; i < 3; i++) {
-            this.add.sprite(x, startY, "house");
+            const house = this.physics.add.sprite(x, startY, "house");
+            this.houses.add(house);
 
             if (i < 2) {
                 x += gaps[i];
