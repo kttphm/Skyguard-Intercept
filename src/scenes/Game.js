@@ -39,7 +39,7 @@ export default class Game extends Phaser.Scene {
         
         this.cleanupMissiles();
 
-        // rotate enemy into moving direction
+        // rotate missile into moving direction
         this.missiles.children.iterate(missile => {
             if (!missile || !missile.body) return;
 
@@ -50,6 +50,19 @@ export default class Game extends Phaser.Scene {
 
             // Rotate to face velocity
             missile.rotation = Math.atan2(vy, vx) + 0;
+        });
+
+        // rotate enemy into moving direction
+        this.enemies.children.iterate(enemy => {
+            if (!enemy || !enemy.body) return;
+
+            const vx = enemy.body.velocity.x;
+            const vy = enemy.body.velocity.y;
+
+            if (vx === 0 && vy === 0) return;
+
+            // Rotate to face velocity
+            enemy.rotation = Math.atan2(vy, vx) + 0;
         });
     }
 
@@ -94,7 +107,8 @@ export default class Game extends Phaser.Scene {
     }
 
     spawnEnemy() {
-        this.enemy = new Enemy(this, this.houses, this.PPM)
+        const enemy = new Enemy(this, this.houses, this.PPM)
+        this.enemies.add(enemy);
     }
 
     cleanupMissiles() {
