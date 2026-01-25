@@ -17,14 +17,21 @@ export default class Preload extends Phaser.Scene {
     }
 
     create() {
-        const dome_R = 250; // min = 150
+        const dome_R = 250;
+        const lineThickness = 0.5;
         const domeGraphics = this.add.graphics();
+
+        domeGraphics.lineStyle(lineThickness, 0x0f766e, 1); 
         domeGraphics.fillStyle(0x0f766e, 0.12);
+
         domeGraphics.beginPath();
-        domeGraphics.arc(dome_R, dome_R, dome_R, Math.PI, 0, false);
+        domeGraphics.arc(dome_R + lineThickness, dome_R + lineThickness, dome_R, Math.PI, 0, false);
         domeGraphics.closePath();
+
         domeGraphics.fillPath();
-        domeGraphics.generateTexture('dome', 2*dome_R, dome_R);
+        domeGraphics.strokePath(); 
+
+        domeGraphics.generateTexture('dome', 2 * (dome_R + lineThickness), dome_R + lineThickness);
         domeGraphics.destroy();
         
         this.scene.start('Menu');
