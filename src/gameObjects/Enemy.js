@@ -6,17 +6,21 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.PPM = PPM
+        this.PPM = PPM;
 
         const houses = housesGroup.getChildren();
-        this.targetHouse = Phaser.Utils.Array.GetRandom(houses);
+        if (houses.length === 0) {
+            this.destroy();
+            return;
+        }
 
+        this.targetHouse = Phaser.Utils.Array.GetRandom(houses);
         this.launch();
     }
 
     launch() {
         const target = this.targetHouse;
-        const PPM = this.PPM
+        const PPM = this.PPM;
 
         const Sx_px = target.x - this.x;
         const Sy_px = target.y - this.y;
@@ -36,10 +40,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         const Vx_px = Vx * PPM;
         const Vy_px = -Vy * PPM; // invert Y for Phaser
 
-        // Apply gravity in PIXELS / SECOND^2
-        this.body.setGravityY(g * PPM);
-
-        // Ensure horizontal direction toward target
+        // Use world gravity (set in Game scene). Ensure horizontal direction toward target.
         this.body.setVelocity(Vx_px * Math.sign(Sx_px), Vy_px);
     }
 

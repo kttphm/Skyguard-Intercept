@@ -25,6 +25,8 @@ export default class Game extends Phaser.Scene {
             house.body.setAllowGravity(false);
         });
 
+        this.initEnemyCollisions();
+
         this.spawnEnemy();
         this.spawnEnemy();
         this.spawnEnemy();
@@ -106,9 +108,34 @@ export default class Game extends Phaser.Scene {
         this.missileText = this.add.text(20, 80, `Missile : `, textStyle); //`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`
     }
 
+    initEnemyCollisions() {
+        this.physics.add.overlap(this.enemies, this.ground, this.onEnemyHitGround, null, this);
+        this.physics.add.overlap(this.enemies, this.missiles, this.onEnemyHitMissile, null, this);
+        this.physics.add.overlap(this.enemies, this.houses, this.onEnemyHitHouse, null, this);
+    }
+
+    onEnemyHitGround(obj1, obj2) {
+        const enemy = obj1 === this.ground ? obj2 : obj1;
+        if (enemy.active) enemy.destroy();
+    }
+
+    onEnemyHitMissile(obj1, obj2) {
+        const enemy = this.missiles.contains(obj1) ? obj2 : obj1;
+        const missile = this.missiles.contains(obj1) ? obj1 : obj2;
+        if (enemy.active) enemy.destroy();
+        if (missile.active) missile.destroy();
+    }
+
+    onEnemyHitHouse(obj1, obj2) {
+        const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
+        const house = this.houses.contains(obj1) ? obj1 : obj2;
+        if (enemy.active) enemy.destroy();
+        if (house.active) house.destroy();
+    }
+
     spawnEnemy() {
-        const enemy = new Enemy(this, this.houses, this.PPM)
-        this.enemies.add(enemy);
+        const enemy = new Enemy(this, this.houses, this.PPM);
+        if (enemy.active) this.enemies.add(enemy);
     }
 
     cleanupMissiles() {
