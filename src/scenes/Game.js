@@ -1,4 +1,5 @@
 import Turret from '../gameObjects/Turret.js';
+import Enemy from '../gameObjects/Enemy.js';
 
 export default class Game extends Phaser.Scene {
 
@@ -7,13 +8,25 @@ export default class Game extends Phaser.Scene {
     }
 
     create() {
-        this.PPM = 10;
+        this.PPM = 2;
         this.life = 5;
-        
-        this.missiles = this.physics.add.group();
+        this.physics.world.gravity.y = 9.8 * this.PPM;
+
+        this.enemies = this.physics.add.group();
+        this.houses = this.physics.add.group();
 
         this.initMap();
         this.initText();
+
+        this.ground.body.setAllowGravity(false);
+        this.dome.body.setAllowGravity(false);
+        this.houses.children.iterate((house) => {
+        if (!house) return;
+            house.body.setAllowGravity(false);
+        });
+
+        this.initEnemyCollisions();
+        this.startEnemySpawning();
     }
 
     update() {
@@ -22,6 +35,32 @@ export default class Game extends Phaser.Scene {
         this.missileText.setText(`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`);
         
         this.cleanupMissiles();
+
+        // rotate missile into moving direction
+        this.missiles.children.iterate(missile => {
+            if (!missile || !missile.body) return;
+
+            const vx = missile.body.velocity.x;
+            const vy = missile.body.velocity.y;
+
+            if (vx === 0 && vy === 0) return;
+
+            // Rotate to face velocity
+            missile.rotation = Math.atan2(vy, vx) + 0;
+        });
+
+        // rotate enemy into moving direction
+        this.enemies.children.iterate(enemy => {
+            if (!enemy || !enemy.body) return;
+
+            const vx = enemy.body.velocity.x;
+            const vy = enemy.body.velocity.y;
+
+            if (vx === 0 && vy === 0) return;
+
+            // Rotate to face velocity
+            enemy.rotation = Math.atan2(vy, vx) + 0;
+        });
     }
 
     initMap() {
@@ -42,17 +81,17 @@ export default class Game extends Phaser.Scene {
 
         // draw background, ground, dome
         const background = this.add.image(centerX, canvas_H/2, 'background');
-        const ground = this.physics.add.sprite(centerX, canvas_H - ground_H/2, 'ground');
-        const dome = this.dome = this.physics.add.sprite(centerX, ground_lv - dome_R/2, 'dome');
+        this.ground = this.physics.add.sprite(centerX, canvas_H - ground_H/2, 'ground');
+        this.dome = this.dome = this.physics.add.sprite(centerX, ground_lv - dome_R/2, 'dome');
 
         // draw house
         const houseY = canvas_H - ground_H - house_H / 2;
-
         this.spawnHouses(centerX - 100, houseY);
         this.spawnHouses(centerX + 40, houseY);
         
-        // draw turret base
+        // draw turret
         this.add.image(centerX, ground_lv - turretbase_H/2, 'turretbase');
+        this.missiles = this.physics.add.group();
         this.turret = new Turret(this, centerX, ground_lv - turretbase_H, this.PPM, this.missiles);
     }
 
@@ -64,16 +103,61 @@ export default class Game extends Phaser.Scene {
         this.missileText = this.add.text(20, 80, `Missile : `, textStyle); //`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`
     }
 
+    initEnemyCollisions() {
+        this.physics.add.overlap(this.missiles, this.ground, this.onPlayerHitGround, null, this);
+        this.physics.add.overlap(this.enemies, this.ground, this.onEnemyHitGround, null, this);
+        this.physics.add.overlap(this.enemies, this.missiles, this.onEnemyHitMissile, null, this);
+        this.physics.add.overlap(this.enemies, this.houses, this.onEnemyHitHouse, null, this);
+    }
+
+    onPlayerHitGround(obj1, obj2) {
+        const missile = obj1 === this.ground ? obj2 : obj1;
+        if (missile.active) missile.destroy();
+    }
+
+    onEnemyHitGround(obj1, obj2) {
+        const enemy = obj1 === this.ground ? obj2 : obj1;
+        if (enemy.active) enemy.destroy();
+    }
+
+    onEnemyHitMissile(obj1, obj2) {
+        const enemy = this.missiles.contains(obj1) ? obj2 : obj1;
+        const missile = this.missiles.contains(obj1) ? obj1 : obj2;
+        if (enemy.active) enemy.destroy();
+        if (missile.active) missile.destroy();
+    }
+
+    onEnemyHitHouse(obj1, obj2) {
+        const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
+        const house = this.houses.contains(obj1) ? obj1 : obj2;
+        if (enemy.active) enemy.destroy();
+        if (house.active) house.destroy();
+    }
+
+    spawnEnemy() {
+        const enemy = new Enemy(this, this.houses, this.PPM);
+        if (enemy.active) this.enemies.add(enemy);
+    }
+
+    startEnemySpawning() {
+        this.spawnEnemy();
+        this.enemySpawnTimer = this.time.addEvent({
+            delay: 500, // ms
+            callback: this.spawnEnemy,
+            callbackScope: this,
+            loop: true
+        });
+    }
+
     cleanupMissiles() {
         const canvas_W = this.scale.width;
         const canvas_H = this.scale.height;
         const margin = 100; // Destroy missiles slightly outside screen bounds
         
         this.missiles.children.entries.forEach(missile => {
-            if (missile.x < -margin || 
-                missile.x > canvas_W + margin || 
-                missile.y < -margin || 
-                missile.y > canvas_H + margin) {
+            if (missile.x < -margin ||           // left
+                missile.x > canvas_W + margin || // right
+                missile.y > canvas_H + margin) { // down
                 missile.destroy();
             }
         });
@@ -91,7 +175,8 @@ export default class Game extends Phaser.Scene {
         let x = startX;
 
         for (let i = 0; i < 3; i++) {
-            this.add.sprite(x, startY, "house");
+            const house = this.physics.add.sprite(x, startY, "house");
+            this.houses.add(house);
 
             if (i < 2) {
                 x += gaps[i];
