@@ -8,7 +8,7 @@ export default class Game extends Phaser.Scene {
     }
 
     create() {
-        this.PPM = 10;
+        this.PPM = 1.5;
         this.life = 5;
         this.physics.world.gravity.y = 9.8 * this.PPM;
 
@@ -38,6 +38,19 @@ export default class Game extends Phaser.Scene {
         this.missileText.setText(`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`);
         
         this.cleanupMissiles();
+
+        // rotate enemy into moving direction
+        this.missiles.children.iterate(missile => {
+            if (!missile || !missile.body) return;
+
+            const vx = missile.body.velocity.x;
+            const vy = missile.body.velocity.y;
+
+            if (vx === 0 && vy === 0) return;
+
+            // Rotate to face velocity
+            missile.rotation = Math.atan2(vy, vx) + 0;
+        });
     }
 
     initMap() {

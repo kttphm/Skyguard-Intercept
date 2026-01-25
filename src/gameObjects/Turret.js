@@ -14,7 +14,7 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
 
         // Missile speeds in m/s (meters per second)
         this.missileTypes = ['light', 'standard', 'heavy', 'test'];
-        this.missileSpeeds = { light: 100, standard: 150, heavy: 200 , test: 1000}; // m/s
+        this.missileSpeeds = { light: 50, standard: 75, heavy: 100 , test: 1000}; // m/s
         this.currentMissileIndex = 1;
 
         // Input keys
