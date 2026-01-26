@@ -17,7 +17,7 @@ export default class Preload extends Phaser.Scene {
     }
 
     create() {
-        const dome_R = 250;
+        const dome_R = 425;
         const lineThickness = 0.5;
         const domeGraphics = this.add.graphics();
 

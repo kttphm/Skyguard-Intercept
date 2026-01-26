@@ -17,16 +17,11 @@ export default class Game extends Phaser.Scene {
 
         this.initMap();
         this.initText();
-
-        this.ground.body.setAllowGravity(false);
-        this.dome.body.setAllowGravity(false);
-        this.houses.children.iterate((house) => {
-        if (!house) return;
-            house.body.setAllowGravity(false);
-        });
-
         this.initEnemyCollisions();
         this.startEnemySpawning();
+
+        const a = this.add.image(1280/2, 720/2, 'missile');
+        a.setScale(0.3);
     }
 
     update() {
@@ -76,6 +71,8 @@ export default class Game extends Phaser.Scene {
         const turretbase_H = this.textures.get('turretbase').getSourceImage().height;
 
         const ground_lv = canvas_H - ground_H;
+        const DomeEdge_L = canvas_W/2 - dome_R;
+        const DomeEdge_R = canvas_W/2 + dome_R;
 
         //--------------------------------//
 
@@ -85,14 +82,24 @@ export default class Game extends Phaser.Scene {
         this.dome = this.dome = this.physics.add.sprite(centerX, ground_lv - dome_R/2, 'dome');
 
         // draw house
-        const houseY = canvas_H - ground_H - house_H / 2;
-        this.spawnHouses(centerX - 100, houseY);
+        const houseY = canvas_H - ground_H - house_H / 1;
+        this.spawnHouses(DomeEdge_L + 100, houseY); // DomeEdge_L + spacing
         this.spawnHouses(centerX + 40, houseY);
         
         // draw turret
         this.add.image(centerX, ground_lv - turretbase_H/2, 'turretbase');
         this.missiles = this.physics.add.group();
         this.turret = new Turret(this, centerX, ground_lv - turretbase_H, this.PPM, this.missiles);
+
+        //--------------------------------//
+
+        // set gravity
+        this.ground.body.setAllowGravity(false);
+        this.dome.body.setAllowGravity(false);
+        this.houses.children.iterate((house) => {
+        if (!house) return;
+            house.body.setAllowGravity(false);
+        });
     }
 
     initText () {
@@ -165,9 +172,7 @@ export default class Game extends Phaser.Scene {
 
     spawnHouses(startX, startY) {
         const spacingPairs = [
-        [25, 35],
-        [30, 30],
-        [35, 25]
+            [100, 100]
         ];
 
         const gaps = Phaser.Utils.Array.GetRandom(spacingPairs);
@@ -176,6 +181,7 @@ export default class Game extends Phaser.Scene {
 
         for (let i = 0; i < 3; i++) {
             const house = this.physics.add.sprite(x, startY, "house");
+            house.setScale(2);
             this.houses.add(house);
 
             if (i < 2) {
