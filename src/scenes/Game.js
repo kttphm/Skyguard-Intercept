@@ -19,9 +19,6 @@ export default class Game extends Phaser.Scene {
         this.initText();
         this.initEnemyCollisions();
         this.startEnemySpawning();
-
-        const a = this.add.image(1280/2, 720/2, 'missile');
-        a.setScale(0.3);
     }
 
     update() {
@@ -82,7 +79,7 @@ export default class Game extends Phaser.Scene {
         this.dome = this.dome = this.physics.add.sprite(centerX, ground_lv - dome_R/2, 'dome');
 
         // draw house
-        const houseY = canvas_H - ground_H - house_H / 1;
+        const houseY = canvas_H - ground_H - house_H / 1.4;
         this.spawnHouses(DomeEdge_L + 100, houseY); // DomeEdge_L + spacing
         this.spawnHouses(centerX + 40, houseY);
         
@@ -142,7 +139,7 @@ export default class Game extends Phaser.Scene {
     }
 
     spawnEnemy() {
-        const enemy = new Enemy(this, this.houses, this.PPM);
+        const enemy = (new Enemy(this, this.houses, this.PPM)).setScale(0.5);
         if (enemy.active) this.enemies.add(enemy);
     }
 
@@ -180,8 +177,7 @@ export default class Game extends Phaser.Scene {
         let x = startX;
 
         for (let i = 0; i < 3; i++) {
-            const house = this.physics.add.sprite(x, startY, "house");
-            house.setScale(2);
+            const house = this.physics.add.sprite(x, startY, "house").setScale(1.5);
             this.houses.add(house);
 
             if (i < 2) {

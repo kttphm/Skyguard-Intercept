@@ -53,7 +53,7 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
     }
 
     handleLaunchMissile() {
-        const turretBarrel = 31; // 25.6
+        const turretBarrel = 30; // 25.6
 
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             const missileSpeedMs = this.missileSpeeds[this.missileTypes[this.currentMissileIndex]]; // m/s
@@ -64,15 +64,15 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
             let missileX, missileY;
 
             if (this.launchAngle > 90) {
-                missileX = this.x + Math.cos(angleInRadians + 0.14889) * turretBarrel;
-                missileY = this.y + Math.sin(angleInRadians + 0.14889) * turretBarrel;
+                missileX = this.x + Math.cos(angleInRadians + 0.15) * turretBarrel;
+                missileY = this.y + Math.sin(angleInRadians + 0.15) * turretBarrel;
             }
             else {
-                missileX = this.x + Math.cos(angleInRadians - 0.14889) * turretBarrel;
-                missileY = this.y + Math.sin(angleInRadians - 0.14889) * turretBarrel;    
+                missileX = this.x + Math.cos(angleInRadians - 0.15) * turretBarrel;
+                missileY = this.y + Math.sin(angleInRadians - 0.15) * turretBarrel;    
             }
 
-            const missile = this.scene.physics.add.sprite(missileX, missileY, 'missile');
+            const missile = this.scene.physics.add.sprite(missileX, missileY, 'missile').setScale(0.5);
 
             // Add missile to group for tracking and cleanup
             this.missileGroup.add(missile);
