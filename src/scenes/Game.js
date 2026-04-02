@@ -195,7 +195,11 @@ export default class Game extends Phaser.Scene {
         });
     }
 
-    stopEnemyAndMissiles() {
+    stopEnemyAndMissiles(obj1, obj2) {
+        const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
+        if (!enemy || enemy._hasTriggeredStop) return;
+        enemy._hasTriggeredStop = true;
+
         const freezeBody = (targetSprite) => {
             if (!targetSprite || !targetSprite.body || targetSprite.body.moves === false) return;
 
