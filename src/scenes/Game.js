@@ -135,6 +135,7 @@ export default class Game extends Phaser.Scene {
         this.physics.add.overlap(this.enemies, this.ground, this.onEnemyHitGround, null, this);
         this.physics.add.overlap(this.enemies, this.missiles, this.onEnemyHitMissile, null, this);
         this.physics.add.overlap(this.enemies, this.houses, this.onEnemyHitHouse, null, this);
+        this.physics.add.overlap(this.enemies, this.dome, this.stopEnemyAndMissiles, this.isInsideDomeArc, this);
     }
 
     onPlayerHitGround(obj1, obj2) {
@@ -159,6 +160,24 @@ export default class Game extends Phaser.Scene {
         const house = this.houses.contains(obj1) ? obj1 : obj2;
         if (enemy.active) enemy.destroy();
         if (house.active) house.destroy();
+    }
+
+    isInsideDomeArc(obj1, obj2) {
+        const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
+        const dome = enemy === obj1 ? obj2 : obj1;
+        if (!enemy || !dome) return false;
+
+        const DOME_TEX_LINE_THICKNESS = 0.5;
+        const centerX = dome.x;
+        const centerY = dome.y + dome.displayHeight / 2;
+        const radius = dome.displayWidth / 2 - DOME_TEX_LINE_THICKNESS * dome.scaleX;
+        const enemyRadius = Math.max(enemy.displayWidth, enemy.displayHeight) * 0.25;
+        const dx = enemy.x - centerX;
+        const dy = enemy.y - centerY;
+        const collisionRadius = radius + enemyRadius;
+        const distSq = dx * dx + dy * dy;
+
+        return enemy.y <= centerY && distSq <= (collisionRadius * collisionRadius);
     }
 
     spawnEnemy() {
