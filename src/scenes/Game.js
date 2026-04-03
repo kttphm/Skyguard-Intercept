@@ -18,7 +18,9 @@ export default class Game extends Phaser.Scene {
 
         this.initMap();
         this.initText();
+        this.initDomeThreatPanel();
         this.initEnemyCollisions();
+        this._nextEnemyId = 1;
         this.startEnemySpawning();
     }
 
@@ -122,12 +124,111 @@ export default class Game extends Phaser.Scene {
         });
     }
 
+    toShiftedX(x) {
+        const originX = this.shiftOriginX ?? (this.scale.width / 2);
+        return x - originX;
+    }
+
+    toShiftedY(y) {
+        const originY = this.shiftOriginY ?? this.scale.height;
+        return originY - y;
+    }
+
     initText () {
         const textStyle = { fontFamily: 'Arial', fontSize: '24px', color: '#ffffff' };
 
         this.lifeText = this.add.text(20, 20, `Life : `, textStyle); //`Life : ${this.life}`
         this.angleText = this.add.text(20, 50, `Launch angle : `, textStyle); //`Launch angle : ${this.turret.getLaunchAngle()}`
         this.missileText = this.add.text(20, 80, `Missile : `, textStyle); //`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`
+    }
+
+    initDomeThreatPanel() {
+        const margin = 16;
+        const panelW = 300;
+        const panelH = 168;
+        const pad = 14;
+        const lineH = 22;
+
+        const xRight = this.scale.width - margin;
+        const yTop = margin;
+
+        this.domeThreatContainer = this.add.container(xRight - panelW, yTop);
+        this.domeThreatContainer.setScrollFactor(0);
+        this.domeThreatContainer.setDepth(2000);
+        this.domeThreatContainer.setVisible(false);
+
+        const bg = this.add.graphics();
+        bg.fillStyle(0x0c1224, 0.92);
+        bg.lineStyle(2, 0xf59e0b, 0.85);
+        bg.fillRoundedRect(0, 0, panelW, panelH, 8);
+        bg.strokeRoundedRect(0, 0, panelW, panelH, 8);
+
+        const titleStyle = {
+            fontFamily: 'Arial',
+            fontSize: '15px',
+            color: '#fde68a',
+            fontStyle: 'bold'
+        };
+        const bodyStyle = {
+            fontFamily: 'Consolas, "Courier New", monospace',
+            fontSize: '14px',
+            color: '#e2e8f0'
+        };
+
+        const title = this.add.text(pad, pad, '⚠ MISSILE DETECTED', titleStyle);
+        const sepY = pad + lineH + 4;
+        const sep = this.add.graphics();
+        sep.lineStyle(1, 0x334155, 1);
+        sep.lineBetween(pad, sepY, panelW - pad, sepY);
+
+        let y = sepY + 10;
+        this.domeThreatLines = {
+            id: this.add.text(pad, y, '', bodyStyle),
+            pos: this.add.text(pad, y + lineH, '', bodyStyle),
+            vel: this.add.text(pad, y + lineH * 2, '', bodyStyle),
+            speed: this.add.text(pad, y + lineH * 3, '', bodyStyle),
+            dir: this.add.text(pad, y + lineH * 4, '', bodyStyle)
+        };
+
+        this.domeThreatContainer.add([
+            bg,
+            title,
+            sep,
+            this.domeThreatLines.id,
+            this.domeThreatLines.pos,
+            this.domeThreatLines.vel,
+            this.domeThreatLines.speed,
+            this.domeThreatLines.dir
+        ]);
+    }
+
+    velocityToDirArrow(vx, vy) {
+        if (vx === 0 && vy === 0) return '·';
+        const deg = (Phaser.Math.RadToDeg(Math.atan2(vy, vx)) + 360) % 360;
+        const arrows = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'];
+        const i = Math.floor((deg + 22.5) / 45) % 8;
+        return arrows[i];
+    }
+
+    showDomeThreatAlert(enemy) {
+        if (!this.domeThreatContainer || !enemy || !enemy.body) return;
+
+        const vx = enemy.body.velocity.x / this.PPM;
+        const vy = enemy.body.velocity.y / this.PPM;
+        const px = this.toShiftedX(Math.round(enemy.x)) / this.PPM;
+        const py = this.toShiftedY(Math.round(enemy.y)) / this.PPM;
+        const speed = Math.sqrt(vx * vx + vy * vy);
+        const idNum = enemy.enemyId != null ? enemy.enemyId : 0;
+        const idStr = String(idNum).padStart(2, '0');
+        const arrow = this.velocityToDirArrow(vx, vy);
+
+        this.domeThreatLines.id.setText(`ID: #${idStr}`);
+        this.domeThreatLines.pos.setText(`Pos: (${px}, ${py})`);
+        this.domeThreatLines.vel.setText(`Vel: (${Math.round(vx)}, ${Math.round(vy)})`);
+        this.domeThreatLines.speed.setText(`Speed: ${Math.round(speed)} m/s`);
+        this.domeThreatLines.dir.setText(`Dir: ${arrow}`);
+
+        this.domeThreatContainer.setVisible(true);
     }
 
     initEnemyCollisions() {
@@ -182,13 +283,16 @@ export default class Game extends Phaser.Scene {
 
     spawnEnemy() {
         const enemy = (new Enemy(this, this.houses, this.PPM)).setScale(0.5);
-        if (enemy.active) this.enemies.add(enemy);
+        if (enemy.active) {
+            enemy.enemyId = this._nextEnemyId++;
+            this.enemies.add(enemy);
+        }
     }
 
     startEnemySpawning() {
         this.spawnEnemy();
         this.enemySpawnTimer = this.time.addEvent({
-            delay: 500, // ms
+            delay: 2000, // ms
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true
@@ -199,6 +303,8 @@ export default class Game extends Phaser.Scene {
         const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
         if (!enemy || enemy._hasTriggeredStop) return;
         enemy._hasTriggeredStop = true;
+
+        this.showDomeThreatAlert(enemy);
 
         const freezeBody = (targetSprite) => {
             if (!targetSprite || !targetSprite.body || targetSprite.body.moves === false) return;
@@ -214,6 +320,8 @@ export default class Game extends Phaser.Scene {
             targetSprite.body.setAcceleration(0, 0);
             targetSprite.body.setAngularAcceleration(0);
             targetSprite.body.moves = false;
+
+            this.enemySpawnTimer.paused = true;
         };
 
         this.enemies.children.iterate(freezeBody);
@@ -221,6 +329,10 @@ export default class Game extends Phaser.Scene {
     }
 
     resumeEnemyAndMissiles() {
+        if (this.domeThreatContainer) {
+            this.domeThreatContainer.setVisible(false);
+        }
+
         const resumeBody = (targetSprite) => {
             if (!targetSprite || !targetSprite.body || targetSprite.body.moves === true) return;
 
