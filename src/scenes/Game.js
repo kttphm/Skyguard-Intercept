@@ -286,6 +286,7 @@ export default class Game extends Phaser.Scene {
         if (enemy.active) {
             enemy.enemyId = this._nextEnemyId++;
             this.enemies.add(enemy);
+            enemy.launch();
         }
     }
 

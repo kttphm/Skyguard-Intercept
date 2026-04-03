@@ -15,33 +15,22 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
 
         this.targetHouse = Phaser.Utils.Array.GetRandom(houses);
-        //this.launch();
     }
 
     launch() {
         const target = this.targetHouse;
-        const PPM = this.PPM;
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        const g = this.scene.physics.world.gravity.y;
 
-        const Sx_px = target.x - this.x;
-        const Sy_px = target.y - this.y;
+        // Pick a flight time so every enemy has slight path variation but still reaches target.
+        const distance = Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y);
+        const flightTime = Phaser.Math.Clamp(distance / Phaser.Math.Between(180, 260), 1.2, 3);
 
-        const Sx = Sx_px / PPM;
-        const Sy = Sy_px / PPM;
+        const vx = dx / flightTime;
+        const vy = (dy - 0.5 * g * flightTime * flightTime) / flightTime;
 
-        // Random horizontal velocity (m/s)
-        const Vx = Phaser.Math.FloatBetween(-100, 100);
-
-        const g = 9.8;
-
-        // Your formula (in METERS)
-        let Vy = Math.sqrt((Vx * Vx) + (2 * g * Sy)) - g * Sx;
-
-        // Convert velocity back to PIXELS / SECOND
-        const Vx_px = Vx * PPM;
-        const Vy_px = -Vy * PPM; // invert Y for Phaser
-
-        // Use world gravity (set in Game scene). Ensure horizontal direction toward target.
-        this.body.setVelocity(Vx_px * Math.sign(Sx_px), Vy_px);
+        this.body.setVelocity(vx, vy);
     }
 
     static getSpawnPosition(scene) {
