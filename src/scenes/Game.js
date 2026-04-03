@@ -18,7 +18,9 @@ export default class Game extends Phaser.Scene {
 
         this.initMap();
         this.initText();
+        this.initDomeThreatPanel();
         this.initEnemyCollisions();
+        this._nextEnemyId = 1;
         this.startEnemySpawning();
     }
 
@@ -122,6 +124,16 @@ export default class Game extends Phaser.Scene {
         });
     }
 
+    toShiftedX(x) {
+        const originX = this.shiftOriginX ?? (this.scale.width / 2);
+        return x - originX;
+    }
+
+    toShiftedY(y) {
+        const originY = this.shiftOriginY ?? this.scale.height;
+        return originY - y;
+    }
+
     initText () {
         const textStyle = { fontFamily: 'Arial', fontSize: '24px', color: '#ffffff' };
 
@@ -130,11 +142,101 @@ export default class Game extends Phaser.Scene {
         this.missileText = this.add.text(20, 80, `Missile : `, textStyle); //`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`
     }
 
+    initDomeThreatPanel() {
+        const margin = 16;
+        const panelW = 300;
+        const panelH = 168;
+        const pad = 14;
+        const lineH = 22;
+
+        const xRight = this.scale.width - margin;
+        const yTop = margin;
+
+        this.domeThreatContainer = this.add.container(xRight - panelW, yTop);
+        this.domeThreatContainer.setScrollFactor(0);
+        this.domeThreatContainer.setDepth(2000);
+        this.domeThreatContainer.setVisible(false);
+
+        const bg = this.add.graphics();
+        bg.fillStyle(0x0c1224, 0.92);
+        bg.lineStyle(2, 0xf59e0b, 0.85);
+        bg.fillRoundedRect(0, 0, panelW, panelH, 8);
+        bg.strokeRoundedRect(0, 0, panelW, panelH, 8);
+
+        const titleStyle = {
+            fontFamily: 'Arial',
+            fontSize: '15px',
+            color: '#fde68a',
+            fontStyle: 'bold'
+        };
+        const bodyStyle = {
+            fontFamily: 'Consolas, "Courier New", monospace',
+            fontSize: '14px',
+            color: '#e2e8f0'
+        };
+
+        const title = this.add.text(pad, pad, '⚠ MISSILE DETECTED', titleStyle);
+        const sepY = pad + lineH + 4;
+        const sep = this.add.graphics();
+        sep.lineStyle(1, 0x334155, 1);
+        sep.lineBetween(pad, sepY, panelW - pad, sepY);
+
+        let y = sepY + 10;
+        this.domeThreatLines = {
+            id: this.add.text(pad, y, '', bodyStyle),
+            pos: this.add.text(pad, y + lineH, '', bodyStyle),
+            vel: this.add.text(pad, y + lineH * 2, '', bodyStyle),
+            speed: this.add.text(pad, y + lineH * 3, '', bodyStyle),
+            dir: this.add.text(pad, y + lineH * 4, '', bodyStyle)
+        };
+
+        this.domeThreatContainer.add([
+            bg,
+            title,
+            sep,
+            this.domeThreatLines.id,
+            this.domeThreatLines.pos,
+            this.domeThreatLines.vel,
+            this.domeThreatLines.speed,
+            this.domeThreatLines.dir
+        ]);
+    }
+
+    velocityToDirArrow(vx, vy) {
+        if (vx === 0 && vy === 0) return '·';
+        const deg = (Phaser.Math.RadToDeg(Math.atan2(vy, vx)) + 360) % 360;
+        const arrows = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'];
+        const i = Math.floor((deg + 22.5) / 45) % 8;
+        return arrows[i];
+    }
+
+    showDomeThreatAlert(enemy) {
+        if (!this.domeThreatContainer || !enemy || !enemy.body) return;
+
+        const vx = enemy.body.velocity.x / this.PPM;
+        const vy = enemy.body.velocity.y / this.PPM;
+        const px = this.toShiftedX(Math.round(enemy.x)) / this.PPM;
+        const py = this.toShiftedY(Math.round(enemy.y)) / this.PPM;
+        const speed = Math.sqrt(vx * vx + vy * vy);
+        const idNum = enemy.enemyId != null ? enemy.enemyId : 0;
+        const idStr = String(idNum).padStart(2, '0');
+        const arrow = this.velocityToDirArrow(vx, vy);
+
+        this.domeThreatLines.id.setText(`ID: #${idStr}`);
+        this.domeThreatLines.pos.setText(`Pos: (${px}, ${py})`);
+        this.domeThreatLines.vel.setText(`Vel: (${Math.round(vx)}, ${Math.round(vy)})`);
+        this.domeThreatLines.speed.setText(`Speed: ${Math.round(speed)} m/s`);
+        this.domeThreatLines.dir.setText(`Dir: ${arrow}`);
+
+        this.domeThreatContainer.setVisible(true);
+    }
+
     initEnemyCollisions() {
         this.physics.add.overlap(this.missiles, this.ground, this.onPlayerHitGround, null, this);
         this.physics.add.overlap(this.enemies, this.ground, this.onEnemyHitGround, null, this);
         this.physics.add.overlap(this.enemies, this.missiles, this.onEnemyHitMissile, null, this);
         this.physics.add.overlap(this.enemies, this.houses, this.onEnemyHitHouse, null, this);
+        this.physics.add.overlap(this.enemies, this.dome, this.stopEnemyAndMissiles, this.isInsideDomeArc, this);
     }
 
     onPlayerHitGround(obj1, obj2) {
@@ -161,19 +263,94 @@ export default class Game extends Phaser.Scene {
         if (house.active) house.destroy();
     }
 
+    isInsideDomeArc(obj1, obj2) {
+        const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
+        const dome = enemy === obj1 ? obj2 : obj1;
+        if (!enemy || !dome) return false;
+
+        const DOME_TEX_LINE_THICKNESS = 0.5;
+        const centerX = dome.x;
+        const centerY = dome.y + dome.displayHeight / 2;
+        const radius = dome.displayWidth / 2 - DOME_TEX_LINE_THICKNESS * dome.scaleX;
+        const enemyRadius = Math.max(enemy.displayWidth, enemy.displayHeight) * 0.25;
+        const dx = enemy.x - centerX;
+        const dy = enemy.y - centerY;
+        const collisionRadius = radius + enemyRadius;
+        const distSq = dx * dx + dy * dy;
+
+        return enemy.y <= centerY && distSq <= (collisionRadius * collisionRadius);
+    }
+
     spawnEnemy() {
         const enemy = (new Enemy(this, this.houses, this.PPM)).setScale(0.5);
-        if (enemy.active) this.enemies.add(enemy);
+        if (enemy.active) {
+            enemy.enemyId = this._nextEnemyId++;
+            this.enemies.add(enemy);
+        }
     }
 
     startEnemySpawning() {
         this.spawnEnemy();
         this.enemySpawnTimer = this.time.addEvent({
-            delay: 500, // ms
+            delay: 2000, // ms
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true
         });
+    }
+
+    stopEnemyAndMissiles(obj1, obj2) {
+        const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
+        if (!enemy || enemy._hasTriggeredStop) return;
+        enemy._hasTriggeredStop = true;
+
+        this.showDomeThreatAlert(enemy);
+
+        const freezeBody = (targetSprite) => {
+            if (!targetSprite || !targetSprite.body || targetSprite.body.moves === false) return;
+
+            targetSprite._savedVelocityX = targetSprite.body.velocity.x;
+            targetSprite._savedVelocityY = targetSprite.body.velocity.y;
+            targetSprite._savedAngularVelocity = targetSprite.body.angularVelocity;
+            targetSprite._savedAccelerationX = targetSprite.body.acceleration.x;
+            targetSprite._savedAccelerationY = targetSprite.body.acceleration.y;
+            targetSprite._savedAngularAcceleration = targetSprite.body.angularAcceleration;
+            targetSprite.body.setVelocity(0, 0);
+            targetSprite.body.setAngularVelocity(0);
+            targetSprite.body.setAcceleration(0, 0);
+            targetSprite.body.setAngularAcceleration(0);
+            targetSprite.body.moves = false;
+
+            this.enemySpawnTimer.paused = true;
+        };
+
+        this.enemies.children.iterate(freezeBody);
+        this.missiles.children.iterate(freezeBody);
+    }
+
+    resumeEnemyAndMissiles() {
+        if (this.domeThreatContainer) {
+            this.domeThreatContainer.setVisible(false);
+        }
+
+        const resumeBody = (targetSprite) => {
+            if (!targetSprite || !targetSprite.body || targetSprite.body.moves === true) return;
+
+            targetSprite.body.moves = true;
+            targetSprite.body.setVelocity(targetSprite._savedVelocityX ?? 0, targetSprite._savedVelocityY ?? 0);
+            targetSprite.body.setAngularVelocity(targetSprite._savedAngularVelocity ?? 0);
+            targetSprite.body.setAcceleration(targetSprite._savedAccelerationX ?? 0, targetSprite._savedAccelerationY ?? 0);
+            targetSprite.body.setAngularAcceleration(targetSprite._savedAngularAcceleration ?? 0);
+            delete targetSprite._savedVelocityX;
+            delete targetSprite._savedVelocityY;
+            delete targetSprite._savedAngularVelocity;
+            delete targetSprite._savedAccelerationX;
+            delete targetSprite._savedAccelerationY;
+            delete targetSprite._savedAngularAcceleration;
+        };
+
+        this.enemies.children.iterate(resumeBody);
+        this.missiles.children.iterate(resumeBody);
     }
 
     cleanupMissiles() {
