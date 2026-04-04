@@ -16,6 +16,8 @@ export default class Game extends Phaser.Scene {
         this.enemies = this.physics.add.group();
         this.houses = this.physics.add.group();
 
+        this.isEnemyDetected = false;
+
         this.initMap();
         this.initText();
         this.initDomeThreatPanel();
@@ -236,7 +238,7 @@ export default class Game extends Phaser.Scene {
         this.physics.add.overlap(this.enemies, this.ground, this.onEnemyHitGround, null, this);
         this.physics.add.overlap(this.enemies, this.missiles, this.onEnemyHitMissile, null, this);
         this.physics.add.overlap(this.enemies, this.houses, this.onEnemyHitHouse, null, this);
-        this.physics.add.overlap(this.enemies, this.dome, this.stopEnemyAndMissiles, this.isInsideDomeArc, this);
+        this.physics.add.overlap(this.enemies, this.dome, this.onEnemyEnteredDome, this.isInsideDomeArc, this);
     }
 
     onPlayerHitGround(obj1, obj2) {
@@ -282,6 +284,8 @@ export default class Game extends Phaser.Scene {
     }
 
     spawnEnemy() {
+        if (this.isEnemyDetected) return;
+
         const enemy = (new Enemy(this, this.houses, this.PPM)).setScale(0.5);
         if (enemy.active) {
             enemy.enemyId = this._nextEnemyId++;
@@ -300,13 +304,23 @@ export default class Game extends Phaser.Scene {
         });
     }
 
-    stopEnemyAndMissiles(obj1, obj2) {
+    onEnemyEnteredDome(obj1, obj2) {
         const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
         if (!enemy || enemy._hasTriggeredStop) return;
         enemy._hasTriggeredStop = true;
 
         this.showDomeThreatAlert(enemy);
 
+        if (!this.isEnemyDetected) {
+            this.isEnemyDetected = true;
+            this.freezeEnemiesAndMissilesForDomeThreat();
+            if (this.enemySpawnTimer) {
+                this.enemySpawnTimer.paused = true;
+            }
+        }
+    }
+
+    freezeEnemiesAndMissilesForDomeThreat() {
         const freezeBody = (targetSprite) => {
             if (!targetSprite || !targetSprite.body || targetSprite.body.moves === false) return;
 
@@ -321,37 +335,43 @@ export default class Game extends Phaser.Scene {
             targetSprite.body.setAcceleration(0, 0);
             targetSprite.body.setAngularAcceleration(0);
             targetSprite.body.moves = false;
-
-            this.enemySpawnTimer.paused = true;
         };
 
         this.enemies.children.iterate(freezeBody);
         this.missiles.children.iterate(freezeBody);
     }
 
-    resumeEnemyAndMissiles() {
+    dismissDomeThreat() {
         if (this.domeThreatContainer) {
             this.domeThreatContainer.setVisible(false);
         }
 
-        const resumeBody = (targetSprite) => {
-            if (!targetSprite || !targetSprite.body || targetSprite.body.moves === true) return;
+        if (this.isEnemyDetected) {
+            this.isEnemyDetected = false;
 
-            targetSprite.body.moves = true;
-            targetSprite.body.setVelocity(targetSprite._savedVelocityX ?? 0, targetSprite._savedVelocityY ?? 0);
-            targetSprite.body.setAngularVelocity(targetSprite._savedAngularVelocity ?? 0);
-            targetSprite.body.setAcceleration(targetSprite._savedAccelerationX ?? 0, targetSprite._savedAccelerationY ?? 0);
-            targetSprite.body.setAngularAcceleration(targetSprite._savedAngularAcceleration ?? 0);
-            delete targetSprite._savedVelocityX;
-            delete targetSprite._savedVelocityY;
-            delete targetSprite._savedAngularVelocity;
-            delete targetSprite._savedAccelerationX;
-            delete targetSprite._savedAccelerationY;
-            delete targetSprite._savedAngularAcceleration;
-        };
+            const resumeBody = (targetSprite) => {
+                if (!targetSprite || !targetSprite.body || targetSprite.body.moves === true) return;
 
-        this.enemies.children.iterate(resumeBody);
-        this.missiles.children.iterate(resumeBody);
+                targetSprite.body.moves = true;
+                targetSprite.body.setVelocity(targetSprite._savedVelocityX ?? 0, targetSprite._savedVelocityY ?? 0);
+                targetSprite.body.setAngularVelocity(targetSprite._savedAngularVelocity ?? 0);
+                targetSprite.body.setAcceleration(targetSprite._savedAccelerationX ?? 0, targetSprite._savedAccelerationY ?? 0);
+                targetSprite.body.setAngularAcceleration(targetSprite._savedAngularAcceleration ?? 0);
+                delete targetSprite._savedVelocityX;
+                delete targetSprite._savedVelocityY;
+                delete targetSprite._savedAngularVelocity;
+                delete targetSprite._savedAccelerationX;
+                delete targetSprite._savedAccelerationY;
+                delete targetSprite._savedAngularAcceleration;
+            };
+
+            this.enemies.children.iterate(resumeBody);
+            this.missiles.children.iterate(resumeBody);
+        }
+
+        if (this.enemySpawnTimer) {
+            this.enemySpawnTimer.paused = false;
+        }
     }
 
     cleanupMissiles() {
