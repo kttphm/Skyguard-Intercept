@@ -40,25 +40,25 @@ export default class Game extends Phaser.Scene {
 
 // --- Initialization ---
     initMap() {
-        // canvas's constant
         const canvas_W = this.scale.width;
         const canvas_H = this.scale.height;
         const centerX = canvas_W / 2;
+        const centerY = canvas_H/2;
 
-        // asset's constant
         const ground_H = this.textures.get('ground').getSourceImage().height;
         const dome_R = this.textures.get('dome').getSourceImage().height;
 
-        const ground_lv = canvas_H - ground_H;
-        const DomeEdge_L = canvas_W/2 - dome_R;
-        const DomeEdge_R = canvas_W/2 + dome_R;
+        // draw background
+        const background = this.add.image(centerX, centerY, 'background');
 
-        //--------------------------------//
-
-        // draw background, ground, dome
-        const background = this.add.image(centerX, canvas_H/2, 'background');
+        // draw ground
         this.ground = this.physics.add.sprite(centerX, canvas_H - ground_H/2, 'ground');
+        const ground_lv = this.ground.getBounds().top;
+
+        // draw dome
         this.dome = this.physics.add.sprite(centerX, ground_lv - dome_R/2, 'dome');
+        const DomeEdge_L = this.dome.getBounds().left;
+        const DomeEdge_R = this.dome.getBounds().right;
 
         // draw house
         const spacing_dome = 150;
