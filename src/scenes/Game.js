@@ -33,31 +33,19 @@ export default class Game extends Phaser.Scene {
         
         this.cleanupMissiles();
 
-        // rotate missile into moving direction
-        this.missiles.children.iterate(missile => {
-            if (!missile || !missile.body) return;
-
-            const vx = missile.body.velocity.x;
-            const vy = missile.body.velocity.y;
-
-            if (vx === 0 && vy === 0) return;
-
-            // Rotate to face velocity
-            missile.rotation = Math.atan2(vy, vx) + 0;
+        [this.missiles, this.enemies].forEach((group) => {
+            group.children.iterate(this.alignSpriteRotationToVelocity, this);
         });
+    }
 
-        // rotate enemy into moving direction
-        this.enemies.children.iterate(enemy => {
-            if (!enemy || !enemy.body) return;
+    alignSpriteRotationToVelocity(sprite) {
+        if (!sprite || !sprite.body) return;
 
-            const vx = enemy.body.velocity.x;
-            const vy = enemy.body.velocity.y;
+        const vx = sprite.body.velocity.x;
+        const vy = sprite.body.velocity.y;
+        if (vx === 0 && vy === 0) return;
 
-            if (vx === 0 && vy === 0) return;
-
-            // Rotate to face velocity
-            enemy.rotation = Math.atan2(vy, vx) + 0;
-        });
+        sprite.rotation = Math.atan2(vy, vx);
     }
 
     initMap() {
