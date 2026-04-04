@@ -14,6 +14,7 @@ export default class Game extends Phaser.Scene {
 
         this.missiles = this.physics.add.group();
         this.enemies = this.physics.add.group();
+        this.trails = this.add.group();
         this.houses = this.physics.add.group();
 
         this.isEnemyDetected = false;
@@ -250,7 +251,8 @@ export default class Game extends Phaser.Scene {
         enemy._hasTriggeredStop = true;
 
         this.showDomeThreatAlert(enemy);
-
+        this.renderMissileTrajectory(enemy, 0.067);
+        
         if (!this.isEnemyDetected) {
             this.isEnemyDetected = true;
             this.freezeEnemiesAndMissilesForDomeThreat();
@@ -314,6 +316,10 @@ export default class Game extends Phaser.Scene {
         if (this.enemySpawnTimer) {
             this.enemySpawnTimer.paused = false;
         }
+
+        if (this.trails) {
+            this.trails.clear(true, true);
+        }
     }
 
 
@@ -337,6 +343,37 @@ export default class Game extends Phaser.Scene {
         this.domeThreatLines.dir.setText(`Dir: ${arrow}`);
 
         this.domeThreatContainer.setVisible(true);
+    }
+
+    renderMissileTrajectory(enemy, dt) {
+        if (!enemy || !enemy.body || !this.ground) return;
+
+        this.trails.clear(true, true);
+
+        const x0 = enemy.x;
+        const y0 = enemy.y;
+        const vx = enemy.body.velocity.x;
+        const vy0 = enemy.body.velocity.y;
+        const g = this.physics.world.gravity.y;
+        const house = enemy.targetHouse;
+        const houseTop = (house && house.active) ? house.getBounds().top - 0.0 : this.ground.getBounds().top - 0.0;
+        const maxT = 30;
+
+        for (let t = dt; t < maxT; t += dt) {
+            const sx = x0 + vx * t;
+            const sy = y0 + vy0 * t + 0.5 * g * t * t;
+
+            if (t > 0 && sy >= houseTop) break;
+
+            const vyAtT = vy0 + g * t;
+            const trail = this.add.image(sx, sy, 'enemy').setScale(0.5); // this.add.rectangle(sx, sy, 6, 2, 0xffffff, 0.85);
+            trail.alpha = 0.4;
+            trail.setDepth(500);
+            trail.setRotation(Math.atan2(vyAtT, vx));
+            this.trails.add(trail);
+
+            if (sx < -200 || sx > this.scale.width + 200) break;
+        }
     }
 
 
