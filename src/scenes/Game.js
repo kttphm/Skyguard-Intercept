@@ -38,16 +38,7 @@ export default class Game extends Phaser.Scene {
         });
     }
 
-    alignSpriteRotationToVelocity(sprite) {
-        if (!sprite || !sprite.body) return;
-
-        const vx = sprite.body.velocity.x;
-        const vy = sprite.body.velocity.y;
-        if (vx === 0 && vy === 0) return;
-
-        sprite.rotation = Math.atan2(vy, vx);
-    }
-
+// --- Initialization ---
     initMap() {
         // canvas's constant
         const canvas_W = this.scale.width;
@@ -112,16 +103,6 @@ export default class Game extends Phaser.Scene {
         if (!house) return;
             house.body.setAllowGravity(false);
         });
-    }
-
-    toShiftedX(x) {
-        const originX = this.shiftOriginX ?? (this.scale.width / 2);
-        return x - originX;
-    }
-
-    toShiftedY(y) {
-        const originY = this.shiftOriginY ?? this.scale.height;
-        return originY - y;
     }
 
     initText () {
@@ -192,35 +173,6 @@ export default class Game extends Phaser.Scene {
         ]);
     }
 
-    velocityToDirArrow(vx, vy) {
-        if (vx === 0 && vy === 0) return '·';
-        const deg = (Phaser.Math.RadToDeg(Math.atan2(vy, vx)) + 360) % 360;
-        const arrows = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'];
-        const i = Math.floor((deg + 22.5) / 45) % 8;
-        return arrows[i];
-    }
-
-    showDomeThreatAlert(enemy) {
-        if (!this.domeThreatContainer || !enemy || !enemy.body) return;
-
-        const vx = enemy.body.velocity.x / this.PPM;
-        const vy = enemy.body.velocity.y / this.PPM;
-        const px = this.toShiftedX(Math.round(enemy.x)) / this.PPM;
-        const py = this.toShiftedY(Math.round(enemy.y)) / this.PPM;
-        const speed = Math.sqrt(vx * vx + vy * vy);
-        const idNum = enemy.enemyId != null ? enemy.enemyId : 0;
-        const idStr = String(idNum).padStart(2, '0');
-        const arrow = this.velocityToDirArrow(vx, vy);
-
-        this.domeThreatLines.id.setText(`ID: #${idStr}`);
-        this.domeThreatLines.pos.setText(`Pos: (${px}, ${py})`);
-        this.domeThreatLines.vel.setText(`Vel: (${Math.round(vx)}, ${Math.round(vy)})`);
-        this.domeThreatLines.speed.setText(`Speed: ${Math.round(speed)} m/s`);
-        this.domeThreatLines.dir.setText(`Dir: ${arrow}`);
-
-        this.domeThreatContainer.setVisible(true);
-    }
-
     initEnemyCollisions() {
         this.physics.add.overlap(this.missiles, this.ground, this.onPlayerHitGround, null, this);
         this.physics.add.overlap(this.enemies, this.ground, this.onEnemyHitGround, null, this);
@@ -229,6 +181,45 @@ export default class Game extends Phaser.Scene {
         this.physics.add.overlap(this.enemies, this.dome, this.onEnemyEnteredDome, this.isInsideDomeArc, this);
     }
 
+    startEnemySpawning() {
+        this.spawnEnemy();
+        this.enemySpawnTimer = this.time.addEvent({
+            delay: 2000, // ms
+            callback: this.spawnEnemy,
+            callbackScope: this,
+            loop: true
+        });
+    }
+
+
+// --- Lifecycle ---
+    spawnEnemy() {
+        if (this.isEnemyDetected) return;
+
+        const enemy = (new Enemy(this, this.houses, this.PPM)).setScale(0.5);
+        if (enemy.active) {
+            enemy.enemyId = this._nextEnemyId++;
+            this.enemies.add(enemy);
+            enemy.launch();
+        }
+    }
+
+    cleanupMissiles() {
+        const canvas_W = this.scale.width;
+        const canvas_H = this.scale.height;
+        const margin = 100; // Destroy missiles slightly outside screen bounds
+        
+        this.missiles.children.entries.forEach(missile => {
+            if (missile.x < -margin ||           // left
+                missile.x > canvas_W + margin || // right
+                missile.y > canvas_H + margin) { // down
+                missile.destroy();
+            }
+        });
+    }
+
+
+// --- Event Handlers ---
     onPlayerHitGround(obj1, obj2) {
         const missile = obj1 === this.ground ? obj2 : obj1;
         if (missile.active) missile.destroy();
@@ -253,45 +244,6 @@ export default class Game extends Phaser.Scene {
         if (house.active) house.destroy();
     }
 
-    isInsideDomeArc(obj1, obj2) {
-        const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
-        const dome = enemy === obj1 ? obj2 : obj1;
-        if (!enemy || !dome) return false;
-
-        const DOME_TEX_LINE_THICKNESS = 0.5;
-        const centerX = dome.x;
-        const centerY = dome.y + dome.displayHeight / 2;
-        const radius = dome.displayWidth / 2 - DOME_TEX_LINE_THICKNESS * dome.scaleX;
-        const enemyRadius = Math.max(enemy.displayWidth, enemy.displayHeight) * 0.25;
-        const dx = enemy.x - centerX;
-        const dy = enemy.y - centerY;
-        const collisionRadius = radius + enemyRadius;
-        const distSq = dx * dx + dy * dy;
-
-        return enemy.y <= centerY && distSq <= (collisionRadius * collisionRadius);
-    }
-
-    spawnEnemy() {
-        if (this.isEnemyDetected) return;
-
-        const enemy = (new Enemy(this, this.houses, this.PPM)).setScale(0.5);
-        if (enemy.active) {
-            enemy.enemyId = this._nextEnemyId++;
-            this.enemies.add(enemy);
-            enemy.launch();
-        }
-    }
-
-    startEnemySpawning() {
-        this.spawnEnemy();
-        this.enemySpawnTimer = this.time.addEvent({
-            delay: 2000, // ms
-            callback: this.spawnEnemy,
-            callbackScope: this,
-            loop: true
-        });
-    }
-
     onEnemyEnteredDome(obj1, obj2) {
         const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
         if (!enemy || enemy._hasTriggeredStop) return;
@@ -308,6 +260,8 @@ export default class Game extends Phaser.Scene {
         }
     }
 
+
+// --- Game State Control ---
     freezeEnemiesAndMissilesForDomeThreat() {
         const freezeBody = (targetSprite) => {
             if (!targetSprite || !targetSprite.body || targetSprite.body.moves === false) return;
@@ -362,17 +316,74 @@ export default class Game extends Phaser.Scene {
         }
     }
 
-    cleanupMissiles() {
-        const canvas_W = this.scale.width;
-        const canvas_H = this.scale.height;
-        const margin = 100; // Destroy missiles slightly outside screen bounds
-        
-        this.missiles.children.entries.forEach(missile => {
-            if (missile.x < -margin ||           // left
-                missile.x > canvas_W + margin || // right
-                missile.y > canvas_H + margin) { // down
-                missile.destroy();
-            }
-        });
+
+// --- UI and Display Logic ---
+    showDomeThreatAlert(enemy) {
+        if (!this.domeThreatContainer || !enemy || !enemy.body) return;
+
+        const vx = enemy.body.velocity.x / this.PPM;
+        const vy = enemy.body.velocity.y / this.PPM;
+        const px = this.toShiftedX(Math.round(enemy.x)) / this.PPM;
+        const py = this.toShiftedY(Math.round(enemy.y)) / this.PPM;
+        const speed = Math.sqrt(vx * vx + vy * vy);
+        const idNum = enemy.enemyId != null ? enemy.enemyId : 0;
+        const idStr = String(idNum).padStart(2, '0');
+        const arrow = this.velocityToDirArrow(vx, vy);
+
+        this.domeThreatLines.id.setText(`ID: #${idStr}`);
+        this.domeThreatLines.pos.setText(`Pos: (${px}, ${py})`);
+        this.domeThreatLines.vel.setText(`Vel: (${Math.round(vx)}, ${Math.round(vy)})`);
+        this.domeThreatLines.speed.setText(`Speed: ${Math.round(speed)} m/s`);
+        this.domeThreatLines.dir.setText(`Dir: ${arrow}`);
+
+        this.domeThreatContainer.setVisible(true);
+    }
+
+
+// --- Utility Functions ---
+    alignSpriteRotationToVelocity(sprite) {
+        if (!sprite || !sprite.body) return;
+
+        const vx = sprite.body.velocity.x;
+        const vy = sprite.body.velocity.y;
+        if (vx === 0 && vy === 0) return;
+
+        sprite.rotation = Math.atan2(vy, vx);
+    }
+
+    velocityToDirArrow(vx, vy) {
+        if (vx === 0 && vy === 0) return '·';
+        const deg = (Phaser.Math.RadToDeg(Math.atan2(vy, vx)) + 360) % 360;
+        const arrows = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'];
+        const i = Math.floor((deg + 22.5) / 45) % 8;
+        return arrows[i];
+    }
+
+    toShiftedX(x) {
+        const originX = this.shiftOriginX ?? (this.scale.width / 2);
+        return x - originX;
+    }
+
+    toShiftedY(y) {
+        const originY = this.shiftOriginY ?? this.scale.height;
+        return originY - y;
+    }
+
+    isInsideDomeArc(obj1, obj2) {
+        const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
+        const dome = enemy === obj1 ? obj2 : obj1;
+        if (!enemy || !dome) return false;
+
+        const DOME_TEX_LINE_THICKNESS = 0.5;
+        const centerX = dome.x;
+        const centerY = dome.y + dome.displayHeight / 2;
+        const radius = dome.displayWidth / 2 - DOME_TEX_LINE_THICKNESS * dome.scaleX;
+        const enemyRadius = Math.max(enemy.displayWidth, enemy.displayHeight) * 0.25;
+        const dx = enemy.x - centerX;
+        const dy = enemy.y - centerY;
+        const collisionRadius = radius + enemyRadius;
+        const distSq = dx * dx + dy * dy;
+
+        return enemy.y <= centerY && distSq <= (collisionRadius * collisionRadius);
     }
 }
