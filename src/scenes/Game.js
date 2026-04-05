@@ -252,6 +252,7 @@ export default class Game extends Phaser.Scene {
 
         this.showDomeThreatAlert(enemy);
         this.renderMissileTrajectory(enemy, 0.067);
+        this.renderInterceptPoint(enemy, this.trails);
         
         if (!this.isEnemyDetected) {
             this.isEnemyDetected = true;
@@ -374,6 +375,19 @@ export default class Game extends Phaser.Scene {
 
             if (sx < -200 || sx > this.scale.width + 200) break;
         }
+    }
+
+    renderInterceptPoint(enemy, trails) {
+        const possibleInterceptPoint = this.add.group();
+        trails.children.iterate((trail) => {
+            if (200 <= this.toShiftedY(trail.y) && this.toShiftedY(trail.y) <= 0.75 * this.toShiftedY(enemy.y)) { // use in game coordinate
+                possibleInterceptPoint.add(trail);
+            }
+        });
+
+        const interceptPoint = Phaser.Utils.Array.GetRandom(possibleInterceptPoint.getChildren());
+        interceptPoint.alpha = 1;
+        interceptPoint.tint = 0xff0000;
     }
 
 
