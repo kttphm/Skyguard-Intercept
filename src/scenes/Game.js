@@ -378,6 +378,8 @@ export default class Game extends Phaser.Scene {
     }
 
     renderInterceptPoint(enemy, trails) {
+        if (!enemy || !enemy.body) return;
+
         const possibleInterceptPoint = this.add.group();
         trails.children.iterate((trail) => {
             if (200 <= this.toShiftedY(trail.y) && this.toShiftedY(trail.y) <= 0.75 * this.toShiftedY(enemy.y)) { // use in game coordinate
@@ -386,6 +388,9 @@ export default class Game extends Phaser.Scene {
         });
 
         const interceptPoint = Phaser.Utils.Array.GetRandom(possibleInterceptPoint.getChildren());
+
+        if (!interceptPoint) return;
+
         interceptPoint.alpha = 1;
         interceptPoint.tint = 0xff0000;
     }
