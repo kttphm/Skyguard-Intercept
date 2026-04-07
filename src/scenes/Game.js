@@ -108,11 +108,14 @@ export default class Game extends Phaser.Scene {
     }
 
     initText () {
-        const textStyle = { fontFamily: 'Arial', fontSize: '24px', color: '#ffffff' };
+        const textStyle = { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff' };
 
-        this.lifeText = this.add.text(20, 20, `Life : `, textStyle); //`Life : ${this.life}`
-        this.angleText = this.add.text(20, 50, `Launch angle : `, textStyle); //`Launch angle : ${this.turret.getLaunchAngle()}`
-        this.missileText = this.add.text(20, 80, `Missile : `, textStyle); //`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`
+        this.lifeText = this.add.text(20, 20, `Life : `, textStyle);
+        this.angleText = this.add.text(20, 50, `Launch angle : `, textStyle);
+        this.missileText = this.add.text(20, 80, `Missile : `, textStyle);
+
+        this.interceptPointText = this.add.text(20, 130, `Intercept point : `, textStyle).setVisible(false);
+        this.timeToInterceptText = this.add.text(20, 160, `Time untill intercept : `, textStyle).setVisible(false);
     }
 
     initDomeThreatPanel() {
@@ -250,10 +253,6 @@ export default class Game extends Phaser.Scene {
         const enemy = this.enemies.contains(obj1) ? obj1 : obj2;
         if (!enemy || enemy._hasTriggeredStop) return;
         enemy._hasTriggeredStop = true;
-
-        this.showDomeThreatAlert(enemy);
-        this.renderMissileTrajectory(enemy, 0.067);
-        this.renderInterceptPoint(enemy, this.trails);
         
         if (!this.isEnemyDetected) {
             this.isEnemyDetected = true;
@@ -262,6 +261,11 @@ export default class Game extends Phaser.Scene {
                 this.enemySpawnTimer.paused = true;
             }
         }
+
+        this.showDomeThreatAlert(enemy);
+        this.renderMissileTrajectory(enemy, 0.067);
+        this.renderInterceptPoint(enemy, this.trails);
+        this.showInterceptionPanel(enemy, this.interceptPoint);
     }
 
 
@@ -324,13 +328,18 @@ export default class Game extends Phaser.Scene {
         }
     }
 
+    dismissInterceptionPanel() {
+        this.interceptPointText.setVisible(false)
+        this.timeToInterceptText.setVisible(false)
+    }
+
 
 // --- UI and Display Logic ---
     showDomeThreatAlert(enemy) {
         if (!this.domeThreatContainer || !enemy || !enemy.body) return;
 
-        const vx = enemy.body.velocity.x / this.PPM;
-        const vy = enemy.body.velocity.y / this.PPM;
+        const vx = enemy._savedVelocityX / this.PPM;
+        const vy = enemy._savedVelocityY / this.PPM;
         const px = this.toShiftedX(Math.round(enemy.x)) / this.PPM;
         const py = this.toShiftedY(Math.round(enemy.y)) / this.PPM;
         const speed = Math.sqrt(vx * vx + vy * vy);
@@ -347,6 +356,18 @@ export default class Game extends Phaser.Scene {
         this.domeThreatContainer.setVisible(true);
     }
 
+    showInterceptionPanel(enemy, interceptPoint) {
+        const interceptX = this.toShiftedX(Math.round(interceptPoint.x)) / this.PPM;
+        const interceptY = this.toShiftedX(Math.round(interceptPoint.y)) / this.PPM;
+
+        const timeToIntercept = Math.round(((interceptPoint.x - enemy.x) / enemy._savedVelocityX) * 100) / 100;
+
+        const textStyle = { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff' };
+
+        this.interceptPointText.setText(`Intercept point : (${interceptX}, ${interceptY})`).setVisible(true);
+        this.timeToInterceptText.setText(`Time untill intercept : ${timeToIntercept}`).setVisible(true);
+    }
+
     renderMissileTrajectory(enemy, dt) {
         if (!enemy || !enemy.body || !this.ground) return;
 
@@ -354,8 +375,8 @@ export default class Game extends Phaser.Scene {
 
         const x0 = enemy.x;
         const y0 = enemy.y;
-        const vx = enemy.body.velocity.x;
-        const vy0 = enemy.body.velocity.y;
+        const vx = enemy._savedVelocityX;
+        const vy0 = enemy._savedVelocityY;
         const g = this.physics.world.gravity.y;
         const house = enemy.targetHouse;
         const houseTop = (house && house.active) ? house.getBounds().top - 0.0 : this.ground.getBounds().top - 0.0;
@@ -388,12 +409,12 @@ export default class Game extends Phaser.Scene {
             }
         });
 
-        const interceptPoint = Phaser.Utils.Array.GetRandom(possibleInterceptPoint.getChildren());
+        this.interceptPoint = Phaser.Utils.Array.GetRandom(possibleInterceptPoint.getChildren());
 
-        if (!interceptPoint) return;
+        if (!this.interceptPoint) return;
 
-        interceptPoint.alpha = 1;
-        interceptPoint.tint = 0xff0000;
+        this.interceptPoint.alpha = 1;
+        this.interceptPoint.tint = 0xff0000;
     }
 
 

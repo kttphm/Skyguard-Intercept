@@ -57,6 +57,7 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
 
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             this.scene.dismissDomeThreat();
+            this.scene.dismissInterceptionPanel();
 
             const missileSpeedMs = this.missileSpeeds[this.missileTypes[this.currentMissileIndex]]; // m/s
             const missileSpeedPx = this.metersToPixels(missileSpeedMs); // pixels/s
