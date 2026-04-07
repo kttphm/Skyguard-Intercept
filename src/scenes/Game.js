@@ -29,6 +29,7 @@ export default class Game extends Phaser.Scene {
 
     update() {
         this.turret.update();
+        this.lifeText.setText(`House : ${this.houses.getLength()}`);
         this.angleText.setText(`Launch angle : ${this.turret.getLaunchAngle()}`);
         this.missileText.setText(`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`);
         
