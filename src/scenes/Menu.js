@@ -13,6 +13,7 @@ export default class Menu extends Phaser.Scene {
 
     initMap() {
         this.background = this.add.tileSprite(640, 360, 1280, 720, 'space');
+        this.title = this.add.image(640, 120, 'title').setScale(0.35);
     }
 
     initGameUi() {
