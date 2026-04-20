@@ -380,6 +380,7 @@ export default class Game extends Phaser.Scene {
     }
 
     showInterceptionPanel(enemy, interceptPoint) {
+        if (!enemy || !enemy.body || !interceptPoint) return;
         const interceptX = this.toShiftedX(Math.round(interceptPoint.x)) / this.PPM;
         const interceptY = this.toShiftedX(Math.round(interceptPoint.y)) / this.PPM;
 
