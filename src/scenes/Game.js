@@ -14,6 +14,7 @@ export default class Game extends Phaser.Scene {
         this.enemyCount = 0;
         this.physics.world.gravity.y = 70 * this.PPM;
 
+        this.isSpawnPaused = false;
         this.enemySpawnTimer = this.time.addEvent({});
 
         this.missiles = this.physics.add.group();
@@ -195,6 +196,8 @@ export default class Game extends Phaser.Scene {
     }
 
     startEnemySpawning() {
+        if (this.isSpawnPaused) return;
+
         this.spawnEnemy();
         this.enemyCount += 1;
 
@@ -266,10 +269,8 @@ export default class Game extends Phaser.Scene {
         
         if (!this.isEnemyDetected) {
             this.isEnemyDetected = true;
-            this.freezeEnemiesAndMissilesForDomeThreat();
-            if (this.enemySpawnTimer) {
-                this.enemySpawnTimer.paused = true;
-            }
+            this.freezeEnemiesAndMissiles();
+            this.pausedSpawning();
         }
 
         this.showDomeThreatAlert(enemy);
@@ -280,7 +281,7 @@ export default class Game extends Phaser.Scene {
 
 
 // --- Game State Control ---
-    freezeEnemiesAndMissilesForDomeThreat() {
+    freezeEnemiesAndMissiles() {
         const freezeBody = (targetSprite) => {
             if (!targetSprite || !targetSprite.body || targetSprite.body.moves === false) return;
 
@@ -328,10 +329,8 @@ export default class Game extends Phaser.Scene {
             this.enemies.children.iterate(resumeBody);
             this.missiles.children.iterate(resumeBody);
         }
-
-        if (this.enemySpawnTimer) {
-            this.enemySpawnTimer.paused = false;
-        }
+        
+        this.resumeSpawning();
 
         if (this.trails) {
             this.trails.clear(true, true);
@@ -485,5 +484,14 @@ export default class Game extends Phaser.Scene {
 
     getSpawnTime(base, variance) {
         return base + Phaser.Math.Between(-variance, variance);
+    }
+
+    pausedSpawning() {
+        this.isSpawnPaused = true;
+    }
+
+    resumeSpawning() {
+        this.isSpawnPaused = false;
+        this.startEnemySpawning
     }
 }
