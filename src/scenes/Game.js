@@ -33,7 +33,6 @@ export default class Game extends Phaser.Scene {
     }
 
     update() {
-        this.checkForWave();
         this.turret.update();
 
         this.waveText.setText(`Wave : ${this.wave}`);
@@ -197,6 +196,8 @@ export default class Game extends Phaser.Scene {
 
     startEnemySpawning() {
         if (this.isSpawnPaused) return;
+
+        this.checkForWave();
 
         this.spawnEnemy();
         this.enemyCount += 1;
