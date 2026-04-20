@@ -222,6 +222,20 @@ export default class Game extends Phaser.Scene {
         }
     }
 
+    checkForWave() {
+        const enemyCount = this.getEnemyCount(this.wave);
+        if (enemyCount == this.enemyCount) {
+            this.wave += 1;
+            this.enemyCount = 0;
+
+            this.pauseSpawning();
+
+            this.time.delayedCall(10000, () => {
+                this.resumeSpawning();
+            });
+        }
+    }
+
     cleanupMissiles() {
         const canvas_W = this.scale.width;
         const canvas_H = this.scale.height;
