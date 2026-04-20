@@ -284,7 +284,7 @@ export default class Game extends Phaser.Scene {
         if (!this.isEnemyDetected) {
             this.isEnemyDetected = true;
             this.freezeEnemiesAndMissiles();
-            this.pausedSpawning();
+            this.pauseSpawning();
         }
 
         this.showDomeThreatAlert(enemy);
@@ -500,7 +500,7 @@ export default class Game extends Phaser.Scene {
         return base + Phaser.Math.Between(-variance, variance);
     }
 
-    pausedSpawning() {
+    pauseSpawning() {
         this.isSpawnPaused = true;
     }
 
