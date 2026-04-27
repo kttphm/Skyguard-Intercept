@@ -17,6 +17,12 @@ export default class Preload extends Phaser.Scene {
     }
 
     create() {
+        this.generateDomeTexture()
+        this.generateHouseTexture()
+        this.scene.start('Menu');
+    }
+
+    generateDomeTexture() {
         const dome_R = 550; // 425
         const lineThickness = 0.5;
         const domeGraphics = this.add.graphics();
@@ -33,7 +39,9 @@ export default class Preload extends Phaser.Scene {
 
         domeGraphics.generateTexture('dome', 2 * (dome_R + lineThickness), dome_R + lineThickness);
         domeGraphics.destroy();
-        
-        this.scene.start('Menu');
+    }
+
+    generateHouseTexture() {
+
     }
 }
