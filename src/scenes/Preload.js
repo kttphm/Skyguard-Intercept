@@ -24,22 +24,22 @@ export default class Preload extends Phaser.Scene {
     }
 
     generateDomeTexture() {
-        const dome_R = 550; // 425
+        const radius = 550; // 425
         const lineThickness = 0.5;
-        const domeGraphics = this.add.graphics();
+        const graphics = this.add.graphics();
 
-        domeGraphics.lineStyle(lineThickness, 0x0f766e, 1); 
-        domeGraphics.fillStyle(0x0f766e, 0.12);
+        graphics.lineStyle(lineThickness, 0x0f766e, 1);
+        graphics.fillStyle(0x0f766e, 0.12);
 
-        domeGraphics.beginPath();
-        domeGraphics.arc(dome_R + lineThickness, dome_R + lineThickness, dome_R, Math.PI, 0, false);
-        domeGraphics.closePath();
+        graphics.beginPath();
+        graphics.arc(radius + lineThickness, radius + lineThickness, radius, Math.PI, 0, false);
+        graphics.closePath();
 
-        domeGraphics.fillPath();
-        domeGraphics.strokePath(); 
+        graphics.fillPath();
+        graphics.strokePath();
 
-        domeGraphics.generateTexture('dome', 2 * (dome_R + lineThickness), dome_R + lineThickness);
-        domeGraphics.destroy();
+        graphics.generateTexture('dome', 2 * (radius + lineThickness), radius + lineThickness);
+        graphics.destroy();
     }
 
     generateHouseTexture() {
