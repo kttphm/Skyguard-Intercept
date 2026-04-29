@@ -8,7 +8,7 @@ export default class Preload extends Phaser.Scene {
         this.load.image('space', 'assets/space.png');
         this.load.image('button', 'assets/button.png');
         this.load.image('background', 'assets/background.png');
-        this.load.image('ground', 'assets/ground.png');
+        //this.load.image('ground', 'assets/ground.png');
         this.load.image('missile', 'assets/missile.png');
         this.load.image('enemy', 'assets/enemy.png');
         this.load.image('house', 'assets/house.png');
@@ -17,6 +17,7 @@ export default class Preload extends Phaser.Scene {
     }
 
     create() {
+        this.generateGroundTexture()
         this.generateDomeTexture()
         this.generateHouseTexture()
         this.scene.start('Menu');
@@ -43,5 +44,17 @@ export default class Preload extends Phaser.Scene {
 
     generateHouseTexture() {
 
+    generateGroundTexture() {
+        const width  = 1280;
+        const height = 30;
+        const graphics = this.add.graphics();
+        
+        graphics.fillStyle(0x262d32, 1);
+        
+        graphics.fillRect(0, 0, width, height);
+        
+        graphics.generateTexture("ground", width, height);
+        
+        graphics.destroy();
     }
 }
