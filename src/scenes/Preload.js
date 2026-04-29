@@ -12,14 +12,16 @@ export default class Preload extends Phaser.Scene {
         this.load.image('missile', 'assets/missile.png');
         this.load.image('enemy', 'assets/enemy.png');
         //this.load.image('house', 'assets/house.png');
-        this.load.image('turrettop', 'assets/TurretTop.png');
-        this.load.image('turretbase', 'assets/TurretBase.png');
+        //this.load.image('turrettop', 'assets/TurretTop.png');
+        //this.load.image('turretbase', 'assets/TurretBase.png');
     }
 
     create() {
-        this.generateGroundTexture()
-        this.generateDomeTexture()
-        this.generateHouseTexture()
+        this.generateGroundTexture();
+        this.generateDomeTexture();
+        this.generateHouseTexture();
+        this.generateTurretBaseTexture();
+        this.generateTurretBarrelTexture();
         this.scene.start('Menu');
     }
 
@@ -66,6 +68,37 @@ export default class Preload extends Phaser.Scene {
         graphics.fillRect(0, 0, width, height);
 
         graphics.generateTexture("ground", width, height);
+
+        graphics.destroy();
+    }
+
+    generateTurretBaseTexture() {
+        const radius = 30;
+        const graphics = this.add.graphics();
+
+        graphics.fillStyle(0x12c8dd, 1);
+
+        graphics.beginPath();
+        graphics.arc(radius, radius, radius, Math.PI, 0, false);
+        graphics.closePath();
+
+        graphics.fillPath();
+
+        graphics.generateTexture("turretbase", radius * 2, radius);
+
+        graphics.destroy();
+    }
+
+    generateTurretBarrelTexture() {
+        const width = 10
+        const height = 36
+        const graphics = this.add.graphics();
+
+        graphics.fillStyle(0x8e9392, 1);
+
+        graphics.fillRect(0, 0, width, height);
+
+        graphics.generateTexture("turrettop", width, height);
 
         graphics.destroy();
     }
