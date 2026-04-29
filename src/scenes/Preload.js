@@ -73,7 +73,7 @@ export default class Preload extends Phaser.Scene {
     }
 
     generateTurretBaseTexture() {
-        const radius = 30;
+        const radius = 25;
         const graphics = this.add.graphics();
 
         graphics.fillStyle(0x12c8dd, 1);
@@ -90,7 +90,7 @@ export default class Preload extends Phaser.Scene {
     }
 
     generateTurretBarrelTexture() {
-        const width = 10
+        const width = 8
         const height = 36
         const graphics = this.add.graphics();
 
