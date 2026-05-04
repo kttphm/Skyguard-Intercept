@@ -12,6 +12,7 @@ export default class Game extends Phaser.Scene {
         this.life = 5;
         this.wave = 1;
         this.enemyCount = 0;
+        this.waveDelayMs = 5000;
         this.physics.world.gravity.y = 70 * this.PPM;
 
         this.isSpawnPaused = false;
@@ -197,7 +198,11 @@ export default class Game extends Phaser.Scene {
     startEnemySpawning() {
         if (this.isSpawnPaused) return;
 
-        this.checkForWave();
+        const targetEnemyCount = this.getEnemyCount(this.wave);
+        if (this.enemyCount >= targetEnemyCount) {
+            this.checkForWave();
+            return;
+        }
 
         this.spawnEnemy();
         this.enemyCount += 1;
