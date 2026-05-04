@@ -211,7 +211,7 @@ export default class Game extends Phaser.Scene {
             delay: this.getSpawnTime(2200, 300),
             callback: this.startEnemySpawning,
             callbackScope: this,
-            loop: true
+            loop: false
         });
     }
 
@@ -230,13 +230,13 @@ export default class Game extends Phaser.Scene {
 
     checkForWave() {
         const enemyCount = this.getEnemyCount(this.wave);
-        if (enemyCount == this.enemyCount) {
+        if (enemyCount <= this.enemyCount) {
             this.wave += 1;
             this.enemyCount = 0;
 
             this.pauseSpawning();
 
-            this.time.delayedCall(10000, () => {
+            this.time.delayedCall(this.waveDelayMs, () => {
                 this.resumeSpawning();
             });
         }
@@ -513,6 +513,6 @@ export default class Game extends Phaser.Scene {
 
     resumeSpawning() {
         this.isSpawnPaused = false;
-        this.startEnemySpawning
+        this.startEnemySpawning();
     }
 }
