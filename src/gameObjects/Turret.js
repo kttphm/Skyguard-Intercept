@@ -60,6 +60,7 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
 
     handleLaunchMissile() {
         const turretBarrel = 61; // barrel(36) + base(25)
+        const minVisibilityDelayMs = 40;
 
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             this.scene.dismissDomeThreat();
@@ -67,25 +68,34 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
 
             const missileSpeedMs = this.missileSpeeds[this.missileTypes[this.currentMissileIndex]]; // m/s
             const missileSpeedPx = this.metersToPixels(missileSpeedMs); // pixels/s
-            
+
             const angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
-            
+
             let missileX, missileY;
 
-            missileX = this.x + Math.cos(angleInRadians) * turretBarrel;
-            missileY = this.y + Math.sin(angleInRadians) * turretBarrel;
+            missileX = this.x
+            missileY = this.y
 
             const missile = this.scene.physics.add.sprite(missileX, missileY, 'missile').setScale(0.5);
+            missile.setVisible(false);
 
             // Add missile to group for tracking and cleanup
             this.missileGroup.add(missile);
-            
+
             // Velocity in pixels/s (converted from m/s)
             const velocityX = Math.cos(angleInRadians) * missileSpeedPx;
             const velocityY = Math.sin(angleInRadians) * missileSpeedPx;
-            
+
             missile.setVelocity(velocityX, velocityY);
             missile.setRotation(angleInRadians);
+
+            // Reveal the missile after it travels roughly one barrel length.
+            const revealDelayMs = Math.max((turretBarrel / missileSpeedPx) * 1000, minVisibilityDelayMs);
+            this.scene.time.delayedCall(revealDelayMs, () => {
+                if (missile.active) {
+                    missile.setVisible(true);
+                }
+            });
         }
     }
 
