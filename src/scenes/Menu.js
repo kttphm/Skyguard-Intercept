@@ -13,13 +13,14 @@ export default class Menu extends Phaser.Scene {
 
     initMap() {
         this.background = this.add.tileSprite(640, 360, 1280, 720, 'space');
+        this.title = this.add.image(640, 120, 'title');
     }
 
     initGameUi() {
         const buttons = this.add.group();
 
         const centerX = this.scale.width * 0.5;
-        const startY = 300;
+        const startY = 370;
         const spacing = 80;
 
         const playBtn  = this.add.sprite(centerX, startY, 'button');
