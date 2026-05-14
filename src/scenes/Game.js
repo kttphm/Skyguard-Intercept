@@ -348,12 +348,12 @@ export default class Game extends Phaser.Scene {
 
             this.enemies.children.iterate(resumeBody);
             this.missiles.children.iterate(resumeBody);
-        }
         
-        this.resumeSpawning();
+            this.resumeSpawning();
 
-        if (this.trails) {
-            this.trails.clear(true, true);
+            if (this.trails) {
+                this.trails.clear(true, true);
+            }
         }
     }
 
