@@ -10,7 +10,13 @@ export default class Game extends Phaser.Scene {
     create() {
         this.PPM = 2;
         this.life = 5;
+        this.wave = 1;
+        this.enemyCount = 0;
+        this.waveDelayMs = 5000;
         this.physics.world.gravity.y = 70 * this.PPM;
+
+        this.isSpawnPaused = false;
+        this.enemySpawnTimer = this.time.addEvent({});
 
         this.missiles = this.physics.add.group();
         this.enemies = this.physics.add.group();
@@ -29,6 +35,8 @@ export default class Game extends Phaser.Scene {
 
     update() {
         this.turret.update();
+
+        this.waveText.setText(`Wave : ${this.wave}`);
         this.lifeText.setText(`House : ${this.houses.getLength()}`);
         this.angleText.setText(`Launch angle : ${this.turret.getLaunchAngle()}`);
         this.missileText.setText(`Missile : ${this.turret.getCurrentMissileType()} (speed: ${this.turret.getCurrentMissileSpeed()} m/s)`);
@@ -110,12 +118,13 @@ export default class Game extends Phaser.Scene {
     initText () {
         const textStyle = { fontFamily: 'Arial', fontSize: '18px', color: '#ffffff' };
 
-        this.lifeText = this.add.text(20, 20, `Life : `, textStyle);
-        this.angleText = this.add.text(20, 50, `Launch angle : `, textStyle);
-        this.missileText = this.add.text(20, 80, `Missile : `, textStyle);
+        this.waveText = this.add.text(20, 20, `Life : `, textStyle);
+        this.lifeText = this.add.text(20, 50, `Life : `, textStyle);
+        this.angleText = this.add.text(20, 80, `Launch angle : `, textStyle);
+        this.missileText = this.add.text(20, 110, `Missile : `, textStyle);
 
-        this.interceptPointText = this.add.text(20, 130, `Intercept point : `, textStyle).setVisible(false);
-        this.timeToInterceptText = this.add.text(20, 160, `Time untill intercept : `, textStyle).setVisible(false);
+        this.interceptPointText = this.add.text(20, 160, `Intercept point : `, textStyle).setVisible(false);
+        this.timeToInterceptText = this.add.text(20, 190, `Time untill intercept : `, textStyle).setVisible(false);
     }
 
     initDomeThreatPanel() {
@@ -187,12 +196,22 @@ export default class Game extends Phaser.Scene {
     }
 
     startEnemySpawning() {
+        if (this.isSpawnPaused) return;
+
+        const targetEnemyCount = this.getEnemyCount(this.wave);
+        if (this.enemyCount >= targetEnemyCount) {
+            this.checkForWave();
+            return;
+        }
+
         this.spawnEnemy();
-        this.enemySpawnTimer = this.time.addEvent({
-            delay: 2000, // ms
-            callback: this.spawnEnemy,
+        this.enemyCount += 1;
+
+        this.enemySpawnTimer.reset({
+            delay: this.getSpawnTime(2200, 300),
+            callback: this.startEnemySpawning,
             callbackScope: this,
-            loop: true
+            loop: false
         });
     }
 
@@ -206,6 +225,20 @@ export default class Game extends Phaser.Scene {
             enemy.enemyId = this._nextEnemyId++;
             this.enemies.add(enemy);
             enemy.launch();
+        }
+    }
+
+    checkForWave() {
+        const enemyCount = this.getEnemyCount(this.wave);
+        if (enemyCount <= this.enemyCount) {
+            this.wave += 1;
+            this.enemyCount = 0;
+
+            this.pauseSpawning();
+
+            this.time.delayedCall(this.waveDelayMs, () => {
+                this.resumeSpawning();
+            });
         }
     }
 
@@ -256,10 +289,8 @@ export default class Game extends Phaser.Scene {
         
         if (!this.isEnemyDetected) {
             this.isEnemyDetected = true;
-            this.freezeEnemiesAndMissilesForDomeThreat();
-            if (this.enemySpawnTimer) {
-                this.enemySpawnTimer.paused = true;
-            }
+            this.freezeEnemiesAndMissiles();
+            this.pauseSpawning();
         }
 
         this.showDomeThreatAlert(enemy);
@@ -270,7 +301,7 @@ export default class Game extends Phaser.Scene {
 
 
 // --- Game State Control ---
-    freezeEnemiesAndMissilesForDomeThreat() {
+    freezeEnemiesAndMissiles() {
         const freezeBody = (targetSprite) => {
             if (!targetSprite || !targetSprite.body || targetSprite.body.moves === false) return;
 
@@ -317,14 +348,12 @@ export default class Game extends Phaser.Scene {
 
             this.enemies.children.iterate(resumeBody);
             this.missiles.children.iterate(resumeBody);
-        }
+        
+            this.resumeSpawning();
 
-        if (this.enemySpawnTimer) {
-            this.enemySpawnTimer.paused = false;
-        }
-
-        if (this.trails) {
-            this.trails.clear(true, true);
+            if (this.trails) {
+                this.trails.clear(true, true);
+            }
         }
     }
 
@@ -357,8 +386,12 @@ export default class Game extends Phaser.Scene {
     }
 
     showInterceptionPanel(enemy, interceptPoint) {
+<<<<<<< feature/enemy-spawning-mechanic
+        if (!enemy || !enemy.body || !interceptPoint) return;
+=======
         if (!enemy || !interceptPoint) return;
 
+>>>>>>> main
         const interceptX = this.toShiftedX(Math.round(interceptPoint.x)) / this.PPM;
         const interceptY = this.toShiftedX(Math.round(interceptPoint.y)) / this.PPM;
 
@@ -465,5 +498,26 @@ export default class Game extends Phaser.Scene {
         const distSq = dx * dx + dy * dy;
 
         return enemy.y <= centerY && distSq <= (collisionRadius * collisionRadius);
+    }
+
+    getEnemyCount(wave) {
+        if (wave <= 5) {
+            return [3, 4, 6, 8, 10][wave - 1];
+        }
+
+        return Math.floor(10 + wave * 1.3) + Phaser.Math.Between(-1, 1);
+    }
+
+    getSpawnTime(base, variance) {
+        return base + Phaser.Math.Between(-variance, variance);
+    }
+
+    pauseSpawning() {
+        this.isSpawnPaused = true;
+    }
+
+    resumeSpawning() {
+        this.isSpawnPaused = false;
+        this.startEnemySpawning();
     }
 }
