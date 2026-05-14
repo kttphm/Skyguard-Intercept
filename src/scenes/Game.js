@@ -102,7 +102,7 @@ export default class Game extends Phaser.Scene {
         const turretbase_H = this.textures.get('turretbase').getSourceImage().height;
 
         this.add.image(centerX, ground_lv - turretbase_H/2, 'turretbase');
-        this.turret = new Turret(this, centerX, ground_lv - turretbase_H, this.PPM, this.missiles);
+        this.turret = new Turret(this, centerX, ground_lv, this.PPM, this.missiles);
 
         //--------------------------------//
 
@@ -386,7 +386,12 @@ export default class Game extends Phaser.Scene {
     }
 
     showInterceptionPanel(enemy, interceptPoint) {
+<<<<<<< feature/enemy-spawning-mechanic
         if (!enemy || !enemy.body || !interceptPoint) return;
+=======
+        if (!enemy || !interceptPoint) return;
+
+>>>>>>> main
         const interceptX = this.toShiftedX(Math.round(interceptPoint.x)) / this.PPM;
         const interceptY = this.toShiftedX(Math.round(interceptPoint.y)) / this.PPM;
 

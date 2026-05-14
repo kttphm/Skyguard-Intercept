@@ -7,10 +7,12 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
 
         this.PPM = PPM;
         this.missileGroup = missileGroup;
-        this.launchAngle = 0;
+        this.launchAngle = 45;
         this.angleDelayShift = 120; // ms delay when Shift is held
         this.angleDelayNormal = 10; // ms delay otherwise
         this.nextAngleStepAt = 0;
+
+        this.setDisplayOrigin(this.width/2, this.height + 25); // 30 is the turret base radius
 
         // Missile speeds in m/s (meters per second)
         this.missileTypes = ['light', 'standard', 'heavy'];
@@ -30,14 +32,18 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
     }
 
     handleAngleInput() {
+        const maxAngle = 170;
+        const minAngle = 10;
+
         const now = this.scene.time.now;
         const delay = this.cursors?.shift.isDown ? this.angleDelayShift : this.angleDelayNormal;
+
         if (now < this.nextAngleStepAt) return;
 
-        if (this.cursors?.left.isDown && this.launchAngle < 180) {
+        if (this.cursors?.left.isDown && this.launchAngle < maxAngle) {
             this.launchAngle += 1;
             this.nextAngleStepAt = now + delay;
-        } else if (this.cursors?.right.isDown && this.launchAngle > 0) {
+        } else if (this.cursors?.right.isDown && this.launchAngle > minAngle) {
             this.launchAngle -= 1;
             this.nextAngleStepAt = now + delay;
         }
@@ -53,7 +59,8 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
     }
 
     handleLaunchMissile() {
-        const turretBarrel = 30; // 25.6
+        const turretBarrel = 61; // barrel(36) + base(25)
+        const minVisibilityDelayMs = 40;
 
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             this.scene.dismissDomeThreat();
@@ -61,49 +68,41 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
 
             const missileSpeedMs = this.missileSpeeds[this.missileTypes[this.currentMissileIndex]]; // m/s
             const missileSpeedPx = this.metersToPixels(missileSpeedMs); // pixels/s
-            
+
             const angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
-            
+
             let missileX, missileY;
 
-            if (this.launchAngle > 90) {
-                missileX = this.x + Math.cos(angleInRadians + 0.15) * turretBarrel;
-                missileY = this.y + Math.sin(angleInRadians + 0.15) * turretBarrel;
-            }
-            else {
-                missileX = this.x + Math.cos(angleInRadians - 0.15) * turretBarrel;
-                missileY = this.y + Math.sin(angleInRadians - 0.15) * turretBarrel;    
-            }
+            missileX = this.x
+            missileY = this.y
 
             const missile = this.scene.physics.add.sprite(missileX, missileY, 'missile').setScale(0.5);
+            missile.setVisible(false);
 
             // Add missile to group for tracking and cleanup
             this.missileGroup.add(missile);
-            
+
             // Velocity in pixels/s (converted from m/s)
             const velocityX = Math.cos(angleInRadians) * missileSpeedPx;
             const velocityY = Math.sin(angleInRadians) * missileSpeedPx;
-            
+
             missile.setVelocity(velocityX, velocityY);
             missile.setRotation(angleInRadians);
+
+            // Reveal the missile after it travels roughly one barrel length.
+            const revealDelayMs = Math.max((turretBarrel / missileSpeedPx) * 1000, minVisibilityDelayMs);
+            this.scene.time.delayedCall(revealDelayMs, () => {
+                if (missile.active) {
+                    missile.setVisible(true);
+                }
+            });
         }
     }
 
     handleTurretRotation() {
-        let angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
+        const angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
 
-        this.setFlipY(this.launchAngle > 90);
-        
-        const baseX = this.displayWidth / 2;
-        const baseY = this.displayHeight / 2;
-
-        if (this.flipY) {
-            this.setDisplayOrigin(baseX - 9, baseY - 4);
-        } else {
-            this.setDisplayOrigin(baseX - 9, baseY + 4);
-        }
-
-        this.setRotation(angleInRadians);
+        this.setRotation(angleInRadians + Math.PI/2);
     }
 
     // Getters for UI updates
