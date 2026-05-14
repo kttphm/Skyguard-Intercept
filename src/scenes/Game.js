@@ -386,12 +386,8 @@ export default class Game extends Phaser.Scene {
     }
 
     showInterceptionPanel(enemy, interceptPoint) {
-<<<<<<< feature/enemy-spawning-mechanic
         if (!enemy || !enemy.body || !interceptPoint) return;
-=======
-        if (!enemy || !interceptPoint) return;
 
->>>>>>> main
         const interceptX = this.toShiftedX(Math.round(interceptPoint.x)) / this.PPM;
         const interceptY = this.toShiftedX(Math.round(interceptPoint.y)) / this.PPM;
 
