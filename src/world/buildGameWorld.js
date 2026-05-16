@@ -1,9 +1,8 @@
 import Turret from '../gameObjects/Turret.js';
 
-/**
- * Spawns background, terrain, dome, houses, and turret. Mutates `scene` with
- * `ground`, `dome`, `turret` and fills `houses` group.
- */
+// Spawns background, ground, dome, houses, and turret.
+// Mutates `scene` with `ground`, `dome`, `turret` and fills `houses` group.
+
 export function buildGameWorld(scene, { houses, missiles, ppm }) {
     const canvas_W = scene.scale.width;
     const canvas_H = scene.scale.height;

@@ -34,7 +34,7 @@ export class DomeThreatPanel {
             color: '#e2e8f0'
         };
 
-        const title = scene.add.text(pad, pad, '⚠ MISSILE DETECTED', titleStyle);
+        const title = scene.add.text(pad, pad, 'MISSILE DETECTED', titleStyle);
         const sepY = pad + lineH + 4;
         const sep = scene.add.graphics();
         sep.lineStyle(1, 0x334155, 1);

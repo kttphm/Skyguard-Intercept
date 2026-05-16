@@ -1,7 +1,3 @@
-/**
- * Shared math / coordinate helpers for the Game scene.
- */
-
 export function alignSpriteRotationToVelocity(sprite) {
     if (!sprite || !sprite.body) return;
 

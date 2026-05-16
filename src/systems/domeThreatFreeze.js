@@ -35,9 +35,8 @@ function resumeBody(targetSprite) {
     delete targetSprite._savedAngularAcceleration;
 }
 
-/**
- * Resumes motion, wave spawning, and clears trajectory trails after a dome threat.
- */
+// Resumes motion, wave spawning, and clears trajectory trails after a dome threat.
+
 export function dismissDomeThreatState(scene) {
     if (scene.isEnemyDetected) {
         scene.isEnemyDetected = false;
