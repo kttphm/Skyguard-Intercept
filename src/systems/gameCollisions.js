@@ -4,6 +4,7 @@ import { freezeEnemiesAndMissiles } from './domeThreatFreeze.js';
 
 function onPlayerHitGround(scene, obj1, obj2) {
     const missile = obj1 === scene.ground ? obj2 : obj1;
+    if (!missile.visible) return;
     if (missile.active) missile.destroy();
 }
 
