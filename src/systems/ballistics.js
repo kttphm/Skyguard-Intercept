@@ -11,15 +11,15 @@ export function renderMissileTrajectory(scene, enemy, dt) {
     const vy0 = enemy._savedVelocityY;
     const g = scene.physics.world.gravity.y;
     const house = enemy.targetHouse;
-    const houseTop =
-        house && house.active ? house.getBounds().top - 0.0 : scene.ground.getBounds().top - 0.0;
+    const houseTop = house && house.active ? house.getBounds().top - 0.0 : scene.ground.getBounds().top;
+    const missileLength = scene.textures.get('missile').getSourceImage().width;
     const maxT = 30;
 
     for (let t = dt; t < maxT; t += dt) {
         const sx = x0 + vx * t;
         const sy = y0 + vy0 * t + 0.5 * g * t * t;
 
-        if (t > 0 && sy >= houseTop) break;
+        if (t > 0 && sy >= houseTop - missileLength/2) break;
 
         const vyAtT = vy0 + g * t;
         const trail = scene.add.image(sx, sy, 'enemy');
