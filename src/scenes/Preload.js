@@ -14,6 +14,7 @@ export default class Preload extends Phaser.Scene {
     }
 
     create() {
+        this.generateBgTexture();
         this.generateGroundTexture();
         this.generateDomeTexture();
         this.generateHouseTexture();
@@ -41,9 +42,23 @@ export default class Preload extends Phaser.Scene {
         graphics.destroy();
     }
 
+    generateBgTexture() {
+        const width = 1280;
+        const height = 720;
+        const graphics = this.add.graphics();
+
+        graphics.fillStyle(0x061e2f, 1);
+
+        graphics.fillRect(0, 0, width, height);
+
+        graphics.generateTexture("background", width, height);
+
+        graphics.destroy();
+    }
+
     generateHouseTexture() {
-        const width = 20
-        const height = 15
+        const width = 20;
+        const height = 15;
         const graphics = this.add.graphics();
 
         graphics.fillStyle(0xffde59, 1);
