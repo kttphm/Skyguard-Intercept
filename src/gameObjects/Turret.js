@@ -12,6 +12,10 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
         this.angleDelayNormal = 10; // ms delay otherwise
         this.nextAngleStepAt = 0;
 
+        this.turretBarrel = this.scene.textures.get('turrettop').getSourceImage().height;
+        this.turretBase = this.scene.textures.get('turretbase').getSourceImage().height;
+        this.missileHeight = this.scene.textures.get('missile').getSourceImage().width;
+
         this.setDisplayOrigin(this.width/2, this.height + 25); // 30 is the turret base radius
 
         // Missile speeds in m/s (meters per second)
@@ -59,30 +63,21 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
     }
 
     handleLaunchMissile() {
-        const turretBarrel = 61; // barrel(36) + base(25)
-        const minVisibilityDelayMs = 40;
-
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
             this.scene.dismissDomeThreat();
             this.scene.dismissInterceptionPanel();
 
             const missileSpeedMs = this.missileSpeeds[this.missileTypes[this.currentMissileIndex]]; // m/s
             const missileSpeedPx = this.metersToPixels(missileSpeedMs); // pixels/s
-
             const angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
 
-            let missileX, missileY;
-
-            missileX = this.x
-            missileY = this.y
-
-            const missile = this.scene.physics.add.sprite(missileX, missileY, 'missile').setScale(0.5);
+            const missile = this.scene.physics.add.sprite(this.x, this.y, 'missile');
             missile.setVisible(false);
 
             // Add missile to group for tracking and cleanup
             this.missileGroup.add(missile);
 
-            // Velocity in pixels/s (converted from m/s)
+            // Velocity in pixels/s converted from m/s
             const velocityX = Math.cos(angleInRadians) * missileSpeedPx;
             const velocityY = Math.sin(angleInRadians) * missileSpeedPx;
 
@@ -90,7 +85,8 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
             missile.setRotation(angleInRadians);
 
             // Reveal the missile after it travels roughly one barrel length.
-            const revealDelayMs = Math.max((turretBarrel / missileSpeedPx) * 1000, minVisibilityDelayMs);
+            const distance = this.turretBarrel + this.turretBase + this.missileHeight/2;
+            const revealDelayMs = (distance / missileSpeedPx) * 1000;
             this.scene.time.delayedCall(revealDelayMs, () => {
                 if (missile.active) {
                     missile.setVisible(true);

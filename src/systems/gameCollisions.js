@@ -38,7 +38,7 @@ function onEnemyEnteredDome(scene, obj1, obj2) {
     }
 
     scene.domeThreatPanel.show(enemy);
-    Ballistics.renderMissileTrajectory(scene, enemy, 0.067);
+    Ballistics.renderMissileTrajectory(scene, enemy, 0.15);
     scene.interceptPoint = Ballistics.pickInterceptPoint(scene, enemy, scene.trails);
     scene.gameHud.showInterceptionPanel(enemy, scene.interceptPoint);
 }
