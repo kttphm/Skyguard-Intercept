@@ -76,7 +76,7 @@ export default class Game extends Phaser.Scene {
     spawnEnemy() {
         if (this.isEnemyDetected) return;
 
-        const enemy = (new Enemy(this, this.houses, this.PPM));
+        const enemy = (new Enemy(this, this.houses, this.PPM)).setScale(0.7);
         if (enemy.active) {
             enemy.enemyId = this._nextEnemyId++;
             this.enemies.add(enemy);

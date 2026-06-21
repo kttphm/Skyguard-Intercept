@@ -71,7 +71,7 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
             const missileSpeedPx = this.metersToPixels(missileSpeedMs); // pixels/s
             const angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
 
-            const missile = this.scene.physics.add.sprite(this.x, this.y, 'missile');
+            const missile = this.scene.physics.add.sprite(this.x, this.y, 'missile').setScale(0.7);
             missile.setVisible(false);
 
             // Add missile to group for tracking and cleanup

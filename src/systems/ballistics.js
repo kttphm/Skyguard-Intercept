@@ -22,7 +22,7 @@ export function renderMissileTrajectory(scene, enemy, dt) {
         if (t > 0 && sy >= houseTop - missileLength/2) break;
 
         const vyAtT = vy0 + g * t;
-        const trail = scene.add.image(sx, sy, 'enemy');
+        const trail = scene.add.image(sx, sy, 'enemy').setScale(0.7);
         trail.alpha = 0.4;
         trail.setDepth(500);
         trail.setRotation(Math.atan2(vyAtT, vx));
