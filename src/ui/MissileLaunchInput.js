@@ -167,7 +167,7 @@ export class MissileLaunchInput {
             this.step = 'velocity';
             this.buffer = '';
             this.errorText = '';
-            this.scene.turret.launchAngle = value;
+            this.scene.turret.setTargetAngle(value);
             return;
         }
 
@@ -177,8 +177,6 @@ export class MissileLaunchInput {
         }
 
         this.scene.turret.launchMissileAt(this.confirmedAngle, value);
-        this.scene.dismissDomeThreat();
-        this.scene.dismissInterceptionPanel();
         this.hide();
     }
 
@@ -187,7 +185,7 @@ export class MissileLaunchInput {
 
         const angle = Number(this.buffer);
         if (Number.isFinite(angle) && angle >= 10 && angle <= 170) {
-            this.scene.turret.launchAngle = angle;
+            this.scene.turret.setTargetAngle(angle);
         }
     }
 
