@@ -7,20 +7,14 @@ export class GameHUD {
 
         this.waveText = scene.add.text(20, 20, 'Wave : ', textStyle);
         this.lifeText = scene.add.text(20, 50, 'House : ', textStyle);
-        this.angleText = scene.add.text(20, 80, 'Launch angle : ', textStyle);
-        this.missileText = scene.add.text(20, 110, 'Missile : ', textStyle);
 
-        this.interceptPointText = scene.add.text(20, 160, 'Intercept point : ', textStyle).setVisible(false);
-        this.timeToInterceptText = scene.add.text(20, 190, 'Time untill intercept : ', textStyle).setVisible(false);
+        this.interceptPointText = scene.add.text(20, 100, 'Intercept point : ', textStyle).setVisible(false);
+        this.timeToInterceptText = scene.add.text(20, 130, 'Time untill intercept : ', textStyle).setVisible(false);
     }
 
-    updateStatus(wave, houseCount, turret) {
+    updateStatus(wave, houseCount) {
         this.waveText.setText(`Wave : ${wave}`);
         this.lifeText.setText(`House : ${houseCount}`);
-        this.angleText.setText(`Launch angle : ${turret.getLaunchAngle()}`);
-        this.missileText.setText(
-            `Missile : ${turret.getCurrentMissileType()} (speed: ${turret.getCurrentMissileSpeed()} m/s)`
-        );
     }
 
     dismissInterceptionPanel() {

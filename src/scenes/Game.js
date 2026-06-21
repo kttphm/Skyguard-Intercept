@@ -46,7 +46,7 @@ export default class Game extends Phaser.Scene {
 
     update() {
         this.turret.update();
-        this.gameHud.updateStatus(this.wave, this.houses.getLength(), this.turret);
+        this.gameHud.updateStatus(this.wave, this.houses.getLength());
 
         if (this.isEnemyDetected) {
             this.missileLaunchInput.update();
