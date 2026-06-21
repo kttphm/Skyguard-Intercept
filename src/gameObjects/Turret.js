@@ -29,10 +29,11 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
     }
 
     update() {
+        this.handleTurretRotation();
+        if (this.scene.isEnemyDetected) return;
         this.handleAngleInput();
         this.handleMissileInput();
         this.handleLaunchMissile();
-        this.handleTurretRotation();
     }
 
     handleAngleInput() {
@@ -64,35 +65,35 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
 
     handleLaunchMissile() {
         if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-            this.scene.dismissDomeThreat();
-            this.scene.dismissInterceptionPanel();
-
-            const missileSpeedMs = this.missileSpeeds[this.missileTypes[this.currentMissileIndex]]; // m/s
-            const missileSpeedPx = this.metersToPixels(missileSpeedMs); // pixels/s
-            const angleInRadians = Phaser.Math.DegToRad(-this.launchAngle);
-
-            const missile = this.scene.physics.add.sprite(this.x, this.y, 'missile').setScale(0.7);
-            missile.setVisible(false);
-
-            // Add missile to group for tracking and cleanup
-            this.missileGroup.add(missile);
-
-            // Velocity in pixels/s converted from m/s
-            const velocityX = Math.cos(angleInRadians) * missileSpeedPx;
-            const velocityY = Math.sin(angleInRadians) * missileSpeedPx;
-
-            missile.setVelocity(velocityX, velocityY);
-            missile.setRotation(angleInRadians);
-
-            // Reveal the missile after it travels roughly one barrel length.
-            const distance = this.turretBarrel + this.turretBase + this.missileHeight/2;
-            const revealDelayMs = (distance / missileSpeedPx) * 1000;
-            this.scene.time.delayedCall(revealDelayMs, () => {
-                if (missile.active) {
-                    missile.setVisible(true);
-                }
-            });
+            const missileSpeedMs = this.missileSpeeds[this.missileTypes[this.currentMissileIndex]];
+            this.launchMissileAt(this.launchAngle, missileSpeedMs);
         }
+    }
+
+    launchMissileAt(angleDeg, speedMs) {
+        const missileSpeedPx = this.metersToPixels(speedMs);
+        const angleInRadians = Phaser.Math.DegToRad(-angleDeg);
+
+        this.launchAngle = angleDeg;
+
+        const missile = this.scene.physics.add.sprite(this.x, this.y, 'missile').setScale(0.7);
+        missile.setVisible(false);
+
+        this.missileGroup.add(missile);
+
+        const velocityX = Math.cos(angleInRadians) * missileSpeedPx;
+        const velocityY = Math.sin(angleInRadians) * missileSpeedPx;
+
+        missile.setVelocity(velocityX, velocityY);
+        missile.setRotation(angleInRadians);
+
+        const distance = this.turretBarrel + this.turretBase + this.missileHeight / 2;
+        const revealDelayMs = (distance / missileSpeedPx) * 1000;
+        this.scene.time.delayedCall(revealDelayMs, () => {
+            if (missile.active) {
+                missile.setVisible(true);
+            }
+        });
     }
 
     handleTurretRotation() {

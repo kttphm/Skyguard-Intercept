@@ -42,6 +42,7 @@ function onEnemyEnteredDome(scene, obj1, obj2) {
     Ballistics.renderMissileTrajectory(scene, enemy, 0.15);
     scene.interceptPoint = Ballistics.pickInterceptPoint(scene, enemy, scene.trails);
     scene.gameHud.showInterceptionPanel(enemy, scene.interceptPoint);
+    scene.missileLaunchInput.begin();
 }
 
 export function setupGameCollisions(scene) {

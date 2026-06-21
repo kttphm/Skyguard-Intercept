@@ -2,6 +2,7 @@ import Enemy from '../gameObjects/Enemy.js';
 import { buildGameWorld } from '../world/buildGameWorld.js';
 import { GameHUD } from '../ui/GameHUD.js';
 import { DomeThreatPanel } from '../ui/DomeThreatPanel.js';
+import { MissileLaunchInput } from '../ui/MissileLaunchInput.js';
 import * as GameMath from '../utils/gameMath.js';
 import { dismissDomeThreatState } from '../systems/domeThreatFreeze.js';
 import { setupGameCollisions } from '../systems/gameCollisions.js';
@@ -35,6 +36,7 @@ export default class Game extends Phaser.Scene {
 
         this.gameHud = new GameHUD(this);
         this.domeThreatPanel = new DomeThreatPanel(this);
+        this.missileLaunchInput = new MissileLaunchInput(this);
 
         setupGameCollisions(this);
 
@@ -45,6 +47,10 @@ export default class Game extends Phaser.Scene {
     update() {
         this.turret.update();
         this.gameHud.updateStatus(this.wave, this.houses.getLength(), this.turret);
+
+        if (this.isEnemyDetected) {
+            this.missileLaunchInput.update();
+        }
 
         this.cleanupMissiles();
 
@@ -116,6 +122,7 @@ export default class Game extends Phaser.Scene {
 
     dismissDomeThreat() {
         this.domeThreatPanel.hide();
+        this.missileLaunchInput.hide();
         dismissDomeThreatState(this);
     }
 
