@@ -37,7 +37,7 @@ export class MissileLaunchInput {
         const panelH = 120;
         const pad = 16;
         const cx = scene.scale.width / 2 - panelW / 2;
-        const cy = scene.scale.height - panelH - 24;
+        const cy = scene.scale.height * 0.1 - panelH / 2;
 
         this.container = scene.add.container(cx, cy);
         this.container.setScrollFactor(0);
