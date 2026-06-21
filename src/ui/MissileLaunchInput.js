@@ -159,8 +159,12 @@ export class MissileLaunchInput {
         }
 
         if (this.step === 'angle') {
-            if (value < 10 || value > 170) {
-                this.errorText = 'Angle must be 10–170';
+            if (value < 10) {
+                this.errorText = 'Angle must be at least 10 degrees';
+                return;
+            }
+            else if (value > 170) {
+                this.errorText = 'Angle must be less than 170 degrees';
                 return;
             }
             this.confirmedAngle = value;
@@ -171,8 +175,12 @@ export class MissileLaunchInput {
             return;
         }
 
-        if (value <= 0) {
-            this.errorText = 'Velocity must be > 0';
+        if (value < 10) {
+            this.errorText = 'Velocity must be at least 10 m/s';
+            return;
+        }
+        else if (value > 100) {
+            this.errorText = 'Velocity must be less than 100 m/s';
             return;
         }
 
