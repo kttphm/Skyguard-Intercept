@@ -9,13 +9,13 @@ export function buildGameWorld(scene, { houses, missiles, ppm }) {
     const centerX = canvas_W / 2;
     const centerY = canvas_H / 2;
 
-    const ground_H = scene.textures.get('ground').getSourceImage().height;
+    const ground_H = 87;
+    const ground_lv = canvas_H - 87;
+
     const dome_R = scene.textures.get('dome').getSourceImage().height;
 
     scene.add.image(centerX, centerY, 'background');
 
-    scene.ground = scene.physics.add.sprite(centerX, canvas_H - ground_H / 2, 'ground');
-    const ground_lv = scene.ground.getBounds().top;
 
     scene.dome = scene.physics.add.sprite(centerX, ground_lv - dome_R / 2, 'dome');
     const DomeEdge_L = scene.dome.getBounds().left;
@@ -23,8 +23,8 @@ export function buildGameWorld(scene, { houses, missiles, ppm }) {
 
     const spacing_dome = 150;
     const spacing_house = 30;
-    const house_count = 5;
-    const house_scaling = 1.5;
+    const house_count = 4;
+    const house_scaling = 0.35;
 
     const house_H = scene.textures.get('house').getSourceImage().height * house_scaling;
     const house_W = scene.textures.get('house').getSourceImage().width * house_scaling;
@@ -52,7 +52,6 @@ export function buildGameWorld(scene, { houses, missiles, ppm }) {
     scene.add.image(centerX, ground_lv - turretbase_H / 2, 'turretbase');
     scene.turret = new Turret(scene, centerX, ground_lv, ppm, missiles);
 
-    scene.ground.body.setAllowGravity(false);
     scene.dome.body.setAllowGravity(false);
     houses.children.iterate((house) => {
         if (!house) return;
