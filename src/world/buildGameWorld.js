@@ -1,5 +1,8 @@
 import Turret from '../gameObjects/Turret.js';
 
+export const HOUSE_SCALING = 0.35;
+export const HOUSE2_SCALING = 0.35;
+
 // Spawns background, ground, dome, houses, and turret.
 // Mutates `scene` with `ground`, `dome`, `turret` and fills `houses` group.
 
@@ -24,22 +27,22 @@ export function buildGameWorld(scene, { houses, missiles, ppm }) {
     const spacing_dome = 150;
     const spacing_house = 30;
     const house_count = 4;
-    const house_scaling = 0.35;
+    const house_scaling = HOUSE_SCALING;
 
-    const house_H = scene.textures.get('house').getSourceImage().height * house_scaling;
-    const house_W = scene.textures.get('house').getSourceImage().width * house_scaling;
+    const house_H = scene.textures.get('house1').getSourceImage().height * house_scaling;
+    const house_W = scene.textures.get('house1').getSourceImage().width * house_scaling;
 
     const houseX1 = DomeEdge_L + spacing_dome + house_W / 2;
     const houseX2 = DomeEdge_R - spacing_dome - (house_count - 1) * house_W - (house_count - 1) * spacing_house - house_W / 2;
     const houseY = canvas_H - ground_H - house_H / 2;
 
     houses.createMultiple({
-        key: 'house',
+        key: 'house1',
         repeat: house_count - 1,
         setXY: { x: houseX1, y: houseY, stepX: spacing_house + house_W }
     });
     houses.createMultiple({
-        key: 'house',
+        key: 'house1',
         repeat: house_count - 1,
         setXY: { x: houseX2, y: houseY, stepX: spacing_house + house_W }
     });

@@ -29,6 +29,7 @@ export default class Game extends Phaser.Scene {
         this.enemies = this.physics.add.group();
         this.trails = this.add.group();
         this.houses = this.physics.add.group();
+        this.ruinedHouses = this.physics.add.group();
 
         this.isEnemyDetected = false;
 

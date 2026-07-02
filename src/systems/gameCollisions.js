@@ -1,6 +1,7 @@
 import * as GameMath from '../utils/gameMath.js';
 import * as Ballistics from './ballistics.js';
 import { freezeEnemiesAndMissiles } from './domeThreatFreeze.js';
+import { HOUSE2_SCALING } from '../world/buildGameWorld.js';
 
 function onPlayerHitGround(scene, obj1, obj2) {
     const missile = obj1 === scene.ground ? obj2 : obj1;
@@ -24,7 +25,20 @@ function onEnemyHitHouse(scene, obj1, obj2) {
     const enemy = scene.enemies.contains(obj1) ? obj1 : obj2;
     const house = scene.houses.contains(obj1) ? obj1 : obj2;
     if (enemy.active) enemy.destroy();
-    if (house.active) house.destroy();
+    if (house.active) {
+        const { x, y } = house;
+        house.destroy();
+        const ruin = scene.ruinedHouses.create(x, y, 'house2');
+        ruin.setScale(HOUSE2_SCALING);
+        ruin.body.setAllowGravity(false);
+    }
+}
+
+function onEnemyHitRuinedHouse(scene, obj1, obj2) {
+    const enemy = scene.enemies.contains(obj1) ? obj1 : obj2;
+    const ruin = scene.ruinedHouses.contains(obj1) ? obj1 : obj2;
+    if (enemy.active) enemy.destroy();
+    if (ruin.active) ruin.destroy();
 }
 
 function onEnemyEnteredDome(scene, obj1, obj2) {
@@ -50,6 +64,7 @@ export function setupGameCollisions(scene) {
     scene.physics.add.overlap(scene.enemies, scene.ground, (a, b) => onEnemyHitGround(scene, a, b));
     scene.physics.add.overlap(scene.enemies, scene.missiles, (a, b) => onEnemyHitMissile(scene, a, b));
     scene.physics.add.overlap(scene.enemies, scene.houses, (a, b) => onEnemyHitHouse(scene, a, b));
+    scene.physics.add.overlap(scene.enemies, scene.ruinedHouses, (a, b) => onEnemyHitRuinedHouse(scene, a, b));
     scene.physics.add.overlap(
         scene.enemies,
         scene.dome,
