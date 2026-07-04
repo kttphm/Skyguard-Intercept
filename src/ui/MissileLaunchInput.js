@@ -108,6 +108,10 @@ export class MissileLaunchInput {
         this.container.setVisible(false);
     }
 
+    isActive() {
+        return this.active;
+    }
+
     update() {
         if (!this.active) return;
 
@@ -117,54 +121,52 @@ export class MissileLaunchInput {
         this.refreshDisplay();
     }
 
-    handleDigitInput() {
-        const appendDigit = (digit) => {
-            if (this.buffer.length >= 4) return;
-            this.buffer += String(digit);
-            this.errorText = '';
-            this.previewAngle();
-        };
-
-        this.digitKeys.forEach((key, digit) => {
-            if (Phaser.Input.Keyboard.JustDown(key)) {
-                appendDigit(digit);
-            }
-        });
-
-        this.numpadKeys.forEach((key, digit) => {
-            if (Phaser.Input.Keyboard.JustDown(key)) {
-                appendDigit(digit);
-            }
-        });
+    appendDigit(digit) {
+        if (!this.active) return;
+        if (this.buffer.length >= 3) return;
+        this.buffer += String(digit);
+        this.errorText = '';
+        this.previewAngle();
+        this.refreshDisplay();
     }
 
-    handleBackspace() {
-        if (!Phaser.Input.Keyboard.JustDown(this.backspaceKey)) return;
+    backspace() {
+        if (!this.active) return;
         this.buffer = this.buffer.slice(0, -1);
         this.errorText = '';
         this.previewAngle();
+        this.refreshDisplay();
     }
 
-    handleEnter() {
-        if (!Phaser.Input.Keyboard.JustDown(this.enterKey)) return;
+    rejectValue(message) {
+        this.errorText = message;
+        this.buffer = '';
+        this.previewAngle();
+        this.refreshDisplay();
+    }
+
+    confirm() {
+        if (!this.active) return;
+
         if (this.buffer === '') {
             this.errorText = 'Enter a value first';
+            this.refreshDisplay();
             return;
         }
 
         const value = Number(this.buffer);
         if (!Number.isFinite(value)) {
-            this.errorText = 'Invalid number';
+            this.rejectValue('Invalid number');
             return;
         }
 
         if (this.step === 'angle') {
             if (value < 10) {
-                this.errorText = 'Angle must be at least 10 degrees';
+                this.rejectValue('Angle must be at least 10 degrees');
                 return;
             }
-            else if (value > 170) {
-                this.errorText = 'Angle must be less than 170 degrees';
+            if (value > 170) {
+                this.rejectValue('Angle must be less than 170 degrees');
                 return;
             }
             this.confirmedAngle = value;
@@ -172,20 +174,45 @@ export class MissileLaunchInput {
             this.buffer = '';
             this.errorText = '';
             this.scene.turret.setTargetAngle(value);
+            this.refreshDisplay();
             return;
         }
 
         if (value < 10) {
-            this.errorText = 'Velocity must be at least 10 m/s';
+            this.rejectValue('Velocity must be at least 10 m/s');
             return;
         }
-        else if (value > 100) {
-            this.errorText = 'Velocity must be less than 100 m/s';
+        if (value > 100) {
+            this.rejectValue('Velocity must be less than 100 m/s');
             return;
         }
 
         this.scene.turret.launchMissileAt(this.confirmedAngle, value);
         this.hide();
+    }
+
+    handleDigitInput() {
+        this.digitKeys.forEach((key, digit) => {
+            if (Phaser.Input.Keyboard.JustDown(key)) {
+                this.appendDigit(digit);
+            }
+        });
+
+        this.numpadKeys.forEach((key, digit) => {
+            if (Phaser.Input.Keyboard.JustDown(key)) {
+                this.appendDigit(digit);
+            }
+        });
+    }
+
+    handleBackspace() {
+        if (!Phaser.Input.Keyboard.JustDown(this.backspaceKey)) return;
+        this.backspace();
+    }
+
+    handleEnter() {
+        if (!Phaser.Input.Keyboard.JustDown(this.enterKey)) return;
+        this.confirm();
     }
 
     previewAngle() {
