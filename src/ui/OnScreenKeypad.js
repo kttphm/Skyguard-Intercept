@@ -4,10 +4,11 @@ const KEY_GAP = 8;
 const PANEL_PAD = 16;
 
 const KEY_ROWS = [
+    [null, null, '⌫'],
     ['7', '8', '9'],
     ['4', '5', '6'],
     ['1', '2', '3'],
-    ['⌫', '0', 'Enter']
+    ['.', '0', 'Enter']
 ];
 
 export class OnScreenKeypad {
@@ -19,9 +20,8 @@ export class OnScreenKeypad {
         const cols = 3;
         const gridW = cols * KEY_W + (cols - 1) * KEY_GAP;
         const gridH = KEY_ROWS.length * KEY_H + (KEY_ROWS.length - 1) * KEY_GAP;
-        const hintH = 18;
         const panelW = gridW + PANEL_PAD * 2;
-        const panelH = gridH + PANEL_PAD * 2 + hintH + 8;
+        const panelH = gridH + PANEL_PAD * 2;
 
         const margin = 16;
         const cx = scene.scale.width - panelW - margin;
@@ -42,86 +42,67 @@ export class OnScreenKeypad {
         bg.fillRoundedRect(0, 0, panelW, panelH, 8);
         bg.strokeRoundedRect(0, 0, panelW, panelH, 8);
 
-        const hintStyle = {
-            fontFamily: 'Arial',
-            fontSize: '10px',
-            color: '#94a3b8'
-        };
-        this.hintText = scene.add.text(
-            PANEL_PAD,
-            PANEL_PAD,
-            'Keypad active when launch input is open',
-            hintStyle
-        );
+        this.container.add(bg);
 
-        const gridY = PANEL_PAD + hintH + 8;
+        const gridY = PANEL_PAD;
         KEY_ROWS.forEach((row, rowIndex) => {
             row.forEach((label, colIndex) => {
+                if (label == null) return;
                 const x = PANEL_PAD + colIndex * (KEY_W + KEY_GAP);
                 const y = gridY + rowIndex * (KEY_H + KEY_GAP);
                 const key = this.createKey(label, x, y);
                 this.keys.push(key);
+                this.container.add([key.bg, key.text, key.hit]);
             });
         });
-
-        this.container.add([bg, this.hintText, ...this.keys.map((k) => k.container)]);
     }
 
     createKey(label, x, y) {
         const scene = this.scene;
-        const keyContainer = scene.add.container(x, y);
 
         const bg = scene.add.graphics();
-        bg.fillStyle(0x1e293b, 1);
-        bg.lineStyle(1, 0x475569, 1);
-        bg.fillRoundedRect(0, 0, KEY_W, KEY_H, 6);
-        bg.strokeRoundedRect(0, 0, KEY_W, KEY_H, 6);
+        bg.setPosition(x, y);
 
-        const isWide = label === 'Enter';
-        const fontSize = isWide ? '13px' : '20px';
-        const text = scene.add.text(KEY_W / 2, KEY_H / 2, label, {
+        const normalFill = 0x1e293b;
+        const pressedFill = 0x334155;
+
+        const restoreKey = () => {
+            bg.clear();
+            bg.fillStyle(normalFill, 1);
+            bg.lineStyle(1, 0x475569, 1);
+            bg.fillRoundedRect(0, 0, KEY_W, KEY_H, 6);
+            bg.strokeRoundedRect(0, 0, KEY_W, KEY_H, 6);
+        };
+
+        restoreKey();
+
+        const fontSize = label === 'Enter' ? '13px' : '20px';
+        const text = scene.add.text(x + KEY_W / 2, y + KEY_H / 2, label, {
             fontFamily: 'Consolas, "Courier New", monospace',
             fontSize,
             color: '#f8fafc'
         });
         text.setOrigin(0.5);
 
-        keyContainer.add([bg, text]);
-        keyContainer.setSize(KEY_W, KEY_H);
-        keyContainer.setInteractive(
-            new Phaser.Geom.Rectangle(0, 0, KEY_W, KEY_H),
-            Phaser.Geom.Rectangle.Contains
-        );
-        keyContainer.input.cursor = 'pointer';
+        const hit = scene.add.zone(x + KEY_W / 2, y + KEY_H / 2, KEY_W, KEY_H);
+        hit.setInteractive({ useHandCursor: true });
 
-        const keyBg = bg;
-        const normalFill = 0x1e293b;
-        const pressedFill = 0x334155;
-
-        keyContainer.on('pointerdown', () => {
-            keyBg.clear();
-            keyBg.fillStyle(pressedFill, 1);
-            keyBg.lineStyle(1, 0x475569, 1);
-            keyBg.fillRoundedRect(0, 0, KEY_W, KEY_H, 6);
-            keyBg.strokeRoundedRect(0, 0, KEY_W, KEY_H, 6);
+        hit.on('pointerdown', () => {
+            bg.clear();
+            bg.fillStyle(pressedFill, 1);
+            bg.lineStyle(1, 0x475569, 1);
+            bg.fillRoundedRect(0, 0, KEY_W, KEY_H, 6);
+            bg.strokeRoundedRect(0, 0, KEY_W, KEY_H, 6);
         });
 
-        const restoreKey = () => {
-            keyBg.clear();
-            keyBg.fillStyle(normalFill, 1);
-            keyBg.lineStyle(1, 0x475569, 1);
-            keyBg.fillRoundedRect(0, 0, KEY_W, KEY_H, 6);
-            keyBg.strokeRoundedRect(0, 0, KEY_W, KEY_H, 6);
-        };
-
-        keyContainer.on('pointerup', () => {
+        hit.on('pointerup', () => {
             restoreKey();
             this.handleKeyPress(label);
         });
 
-        keyContainer.on('pointerout', restoreKey);
+        hit.on('pointerout', restoreKey);
 
-        return { container: keyContainer, label };
+        return { bg, text, hit, label };
     }
 
     handleKeyPress(label) {
@@ -133,6 +114,10 @@ export class OnScreenKeypad {
         }
         if (label === 'Enter') {
             this.launchInput.confirm();
+            return;
+        }
+        if (label === '.') {
+            this.launchInput.appendDecimal();
             return;
         }
         if (/^\d$/.test(label)) {
@@ -159,8 +144,13 @@ export class OnScreenKeypad {
         const alpha = enabled ? 1 : 0.45;
 
         this.keys.forEach((key) => {
-            key.container.setAlpha(alpha);
+            key.bg.setAlpha(alpha);
+            key.text.setAlpha(alpha);
+            if (enabled) {
+                key.hit.setInteractive({ useHandCursor: true });
+            } else {
+                key.hit.disableInteractive();
+            }
         });
-        this.hintText.setAlpha(enabled ? 0 : 1);
     }
 }

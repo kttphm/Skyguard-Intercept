@@ -4,6 +4,7 @@ import { GameHUD } from '../ui/GameHUD.js';
 import { DomeThreatPanel } from '../ui/DomeThreatPanel.js';
 import { MissileLaunchInput } from '../ui/MissileLaunchInput.js';
 import { OnScreenKeypad } from '../ui/OnScreenKeypad.js';
+import { Calculator } from '../ui/Calculator.js';
 import * as GameMath from '../utils/gameMath.js';
 import { dismissDomeThreatState } from '../systems/domeThreatFreeze.js';
 import { setupGameCollisions } from '../systems/gameCollisions.js';
@@ -40,7 +41,9 @@ export default class Game extends Phaser.Scene {
         this.domeThreatPanel = new DomeThreatPanel(this);
         this.missileLaunchInput = new MissileLaunchInput(this);
         this.onScreenKeypad = new OnScreenKeypad(this, this.missileLaunchInput);
+        this.calculator = new Calculator(this);
         this.keypadToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+        this.calculatorToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
 
         setupGameCollisions(this);
 
@@ -58,6 +61,9 @@ export default class Game extends Phaser.Scene {
 
         if (Phaser.Input.Keyboard.JustDown(this.keypadToggleKey)) {
             this.onScreenKeypad.toggle();
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.calculatorToggleKey)) {
+            this.calculator.toggle();
         }
         this.onScreenKeypad.update();
 

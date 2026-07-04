@@ -1,3 +1,8 @@
+import {
+    applyAppendDecimal,
+    applyAppendDigit
+} from '../utils/numericInput.js';
+
 const DIGIT_KEYS = [
     Phaser.Input.Keyboard.KeyCodes.ZERO,
     Phaser.Input.Keyboard.KeyCodes.ONE,
@@ -86,6 +91,8 @@ export class MissileLaunchInput {
 
         this.backspaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
         this.enterKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        this.periodKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PERIOD);
+        this.numpadDecimalKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_DECIMAL);
         this.digitKeys = DIGIT_KEYS.map((code) => scene.input.keyboard.addKey(code));
         this.numpadKeys = NUMPAD_KEYS.map((code) => scene.input.keyboard.addKey(code));
     }
@@ -116,6 +123,7 @@ export class MissileLaunchInput {
         if (!this.active) return;
 
         this.handleDigitInput();
+        this.handleDecimalInput();
         this.handleBackspace();
         this.handleEnter();
         this.refreshDisplay();
@@ -123,8 +131,19 @@ export class MissileLaunchInput {
 
     appendDigit(digit) {
         if (!this.active) return;
-        if (this.buffer.length >= 3) return;
-        this.buffer += String(digit);
+        const next = applyAppendDigit(this.buffer, digit);
+        if (next === this.buffer) return;
+        this.buffer = next;
+        this.errorText = '';
+        this.previewAngle();
+        this.refreshDisplay();
+    }
+
+    appendDecimal() {
+        if (!this.active) return;
+        const next = applyAppendDecimal(this.buffer);
+        if (next === this.buffer) return;
+        this.buffer = next;
         this.errorText = '';
         this.previewAngle();
         this.refreshDisplay();
@@ -203,6 +222,15 @@ export class MissileLaunchInput {
                 this.appendDigit(digit);
             }
         });
+    }
+
+    handleDecimalInput() {
+        if (
+            Phaser.Input.Keyboard.JustDown(this.periodKey) ||
+            Phaser.Input.Keyboard.JustDown(this.numpadDecimalKey)
+        ) {
+            this.appendDecimal();
+        }
     }
 
     handleBackspace() {
