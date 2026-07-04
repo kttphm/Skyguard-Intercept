@@ -42,8 +42,8 @@ export default class Game extends Phaser.Scene {
         this.missileLaunchInput = new MissileLaunchInput(this);
         this.onScreenKeypad = new OnScreenKeypad(this, this.missileLaunchInput);
         this.calculator = new Calculator(this);
-        this.keypadToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
-        this.calculatorToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.K);
+        this.keypadToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
+        this.calculatorToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
 
         setupGameCollisions(this);
 
