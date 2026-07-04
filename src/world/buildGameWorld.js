@@ -1,7 +1,7 @@
 import Turret from '../gameObjects/Turret.js';
 
 export const HOUSE_SCALING = 0.35;
-export const HOUSE2_SCALING = 0.35;
+export const HOUSE2_SCALING = 0.53;
 
 // Spawns background, ground, dome, houses, and turret.
 // Mutates `scene` with `ground`, `dome`, `turret` and fills `houses` group.

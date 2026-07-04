@@ -28,7 +28,7 @@ function onEnemyHitHouse(scene, obj1, obj2) {
     if (house.active) {
         const { x, y } = house;
         house.destroy();
-        const ruin = scene.ruinedHouses.create(x, y, 'house2');
+        const ruin = scene.ruinedHouses.create(x, y + 4, 'house2');
         ruin.setScale(HOUSE2_SCALING);
         ruin.body.setAllowGravity(false);
     }
