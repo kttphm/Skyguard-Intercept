@@ -69,7 +69,6 @@ function onEnemyEnteredDome(scene, obj1, obj2) {
         scene.pauseSpawning();
     }
 
-    scene.domeThreatPanel.show(enemy);
     Ballistics.renderMissileTrajectory(scene, enemy, 0.15);
     scene.interceptInfoMode = pickInterceptInfoMode();
     scene.interceptPoint = Ballistics.pickInterceptPoint(scene, enemy, scene.trails);

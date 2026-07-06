@@ -1,7 +1,6 @@
 import Enemy from '../gameObjects/Enemy.js';
 import { buildGameWorld } from '../world/buildGameWorld.js';
 import { GameHUD } from '../ui/GameHUD.js';
-import { DomeThreatPanel } from '../ui/DomeThreatPanel.js';
 import { MissileLaunchInput } from '../ui/MissileLaunchInput.js';
 import { OnScreenKeypad } from '../ui/OnScreenKeypad.js';
 import { Calculator } from '../ui/Calculator.js';
@@ -38,7 +37,6 @@ export default class Game extends Phaser.Scene {
         buildGameWorld(this, { houses: this.houses, missiles: this.missiles, ppm: this.PPM });
 
         this.gameHud = new GameHUD(this);
-        this.domeThreatPanel = new DomeThreatPanel(this);
         this.missileLaunchInput = new MissileLaunchInput(this);
         this.onScreenKeypad = new OnScreenKeypad(this, this.missileLaunchInput);
         this.calculator = new Calculator(this);
@@ -136,7 +134,6 @@ export default class Game extends Phaser.Scene {
     }
 
     dismissDomeThreat() {
-        this.domeThreatPanel.hide();
         this.missileLaunchInput.hide();
         dismissDomeThreatState(this);
     }
