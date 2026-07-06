@@ -246,44 +246,61 @@ export class MissileLaunchInput {
         this.refreshDisplay();
     }
 
+    validateField(field) {
+        const buffer = field === 'angle' ? this.angleBuffer : this.velocityBuffer;
+
+        if (buffer === '') {
+            return {
+                message: field === 'angle' ? 'Enter angle' : 'Enter velocity'
+            };
+        }
+
+        const value = Number(buffer);
+        if (!Number.isFinite(value)) {
+            return {
+                message: field === 'angle' ? 'Invalid angle' : 'Invalid velocity'
+            };
+        }
+
+        if (field === 'angle') {
+            if (value < 10) {
+                return { message: 'Angle must be at least 10 degrees' };
+            }
+            if (value > 170) {
+                return { message: 'Angle must be less than 170 degrees' };
+            }
+        } else if (value < 10) {
+            return { message: 'Velocity must be at least 10 m/s' };
+        } else if (value > 100) {
+            return { message: 'Velocity must be less than 100 m/s' };
+        }
+
+        return null;
+    }
+
     confirm() {
         if (!this.active) return;
 
-        if (this.angleBuffer === '' || this.velocityBuffer === '') {
-            this.rejectValue('Enter both angle and velocity');
+        const activeError = this.validateField(this.activeField);
+        if (activeError) {
+            this.rejectValue(activeError.message, this.activeField);
             return;
         }
 
-        const angle = Number(this.angleBuffer);
-        if (!Number.isFinite(angle)) {
-            this.rejectValue('Invalid angle', 'angle');
-            return;
-        }
-        if (angle < 10) {
-            this.rejectValue('Angle must be at least 10 degrees', 'angle');
-            return;
-        }
-        if (angle > 170) {
-            this.rejectValue('Angle must be less than 170 degrees', 'angle');
+        this.errorText = '';
+
+        const angleError = this.validateField('angle');
+        const velocityError = this.validateField('velocity');
+        if (!angleError && !velocityError) {
+            this.scene.turret.launchMissileAt(Number(this.angleBuffer), Number(this.velocityBuffer));
+            this.hide();
             return;
         }
 
-        const velocity = Number(this.velocityBuffer);
-        if (!Number.isFinite(velocity)) {
-            this.rejectValue('Invalid velocity', 'velocity');
-            return;
-        }
-        if (velocity < 10) {
-            this.rejectValue('Velocity must be at least 10 m/s', 'velocity');
-            return;
-        }
-        if (velocity > 100) {
-            this.rejectValue('Velocity must be less than 100 m/s', 'velocity');
-            return;
-        }
-
-        this.scene.turret.launchMissileAt(angle, velocity);
-        this.hide();
+        // Active field is valid; move to the other field if launch isn't ready yet.
+        const otherField = this.activeField === 'angle' ? 'velocity' : 'angle';
+        this.activeField = otherField;
+        this.refreshDisplay();
     }
 
     handleDigitInput() {
