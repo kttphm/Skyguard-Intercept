@@ -34,7 +34,7 @@ export class GameHUD {
         const interceptY = GameMath.toShiftedY(Math.round(interceptPoint.y), h, scene.shiftOriginY) / ppm;
 
         const timeToIntercept =
-            Math.round(((interceptPoint.x - enemy.x) / enemy._savedVelocityX) * 100) / 100;
+            Math.round(((interceptPoint.x - enemy.x) / enemy._savedVelocityX) * 1000) / 1000;
 
         this.interceptPointText.setText(`Intercept point : (${interceptX}, ${interceptY})`).setVisible(true);
         this.timeToInterceptText.setText(`Time untill intercept : ${timeToIntercept}`).setVisible(true);

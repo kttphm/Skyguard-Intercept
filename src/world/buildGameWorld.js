@@ -17,7 +17,7 @@ export function buildGameWorld(scene, { houses, missiles, ppm }) {
 
     const dome_R = scene.textures.get('dome').getSourceImage().height;
 
-    scene.add.image(centerX, centerY, 'background');
+    scene.ground = scene.add.sprite(centerX, centerY, 'background');
 
 
     scene.dome = scene.physics.add.sprite(centerX, ground_lv - dome_R / 2, 'dome');
