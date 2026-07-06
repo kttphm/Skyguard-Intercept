@@ -51,7 +51,17 @@ export function pickInterceptPoint(scene, enemy, trails) {
 
     if (!interceptPoint) return null;
 
-    interceptPoint.alpha = 1;
-    interceptPoint.tint = 0xff0000;
     return interceptPoint;
+}
+
+export function setInterceptMarkerStyle(interceptPoint, show) {
+    if (!interceptPoint) return;
+
+    if (show) {
+        interceptPoint.alpha = 1;
+        interceptPoint.setTint(0xff0000);
+    } else {
+        interceptPoint.alpha = 0.4;
+        interceptPoint.clearTint();
+    }
 }
