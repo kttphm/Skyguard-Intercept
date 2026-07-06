@@ -92,7 +92,7 @@ export class MissileLaunchInput {
         this.backspaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
         this.enterKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
         this.periodKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PERIOD);
-        this.numpadDecimalKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_DECIMAL);
+        this.numpadDecimalKey = scene.input.keyboard.addKey(110); // numpad period key
         this.digitKeys = DIGIT_KEYS.map((code) => scene.input.keyboard.addKey(code));
         this.numpadKeys = NUMPAD_KEYS.map((code) => scene.input.keyboard.addKey(code));
     }
