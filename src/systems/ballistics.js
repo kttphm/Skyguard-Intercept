@@ -1,7 +1,6 @@
 import * as GameMath from '../utils/gameMath.js';
 
 export function renderMissileTrajectory(scene, enemy, dt) {
-    console.log(scene.ground)
     if (!enemy || !enemy.body || !scene.ground) return;
 
     scene.trails.clear(true, true);
