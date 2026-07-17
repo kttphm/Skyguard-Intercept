@@ -2,7 +2,6 @@ import Enemy from '../gameObjects/Enemy.js';
 import { buildGameWorld } from '../world/buildGameWorld.js';
 import { GameHUD } from '../ui/GameHUD.js';
 import { MissileLaunchInput } from '../ui/MissileLaunchInput.js';
-import { OnScreenKeypad } from '../ui/OnScreenKeypad.js';
 import * as GameMath from '../utils/gameMath.js';
 import { dismissDomeThreatState } from '../systems/domeThreatFreeze.js';
 import { setupGameCollisions } from '../systems/gameCollisions.js';
@@ -37,7 +36,6 @@ export default class Game extends Phaser.Scene {
 
         this.gameHud = new GameHUD(this);
         this.missileLaunchInput = new MissileLaunchInput(this);
-        this.onScreenKeypad = new OnScreenKeypad(this, this.missileLaunchInput);
         this.keypadToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
 
         setupGameCollisions(this);
@@ -53,11 +51,6 @@ export default class Game extends Phaser.Scene {
         if (this.isEnemyDetected) {
             this.missileLaunchInput.update();
         }
-
-        if (Phaser.Input.Keyboard.JustDown(this.keypadToggleKey)) {
-            this.onScreenKeypad.toggle();
-        }
-        this.onScreenKeypad.update();
 
         this.cleanupMissiles();
 
