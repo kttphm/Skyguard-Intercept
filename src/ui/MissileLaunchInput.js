@@ -333,11 +333,11 @@ export class MissileLaunchInput {
 
     handleUpDown() {
         if (Phaser.Input.Keyboard.JustDown(this.upKey)) {
-            this.selectField(this.activeField === 'angle' ? 'velocity' : 'angle');
+            this.selectField(this.activeField === 'velocity' ? 'angle' : 'angle');
             return;
         }
         if (Phaser.Input.Keyboard.JustDown(this.downKey)) {
-            this.selectField(this.activeField === 'angle' ? 'velocity' : 'angle');
+            this.selectField(this.activeField === 'angle' ? 'velocity' : 'velocity');
         }
     }
 
