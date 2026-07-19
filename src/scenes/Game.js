@@ -19,7 +19,7 @@ export default class Game extends Phaser.Scene {
         this.wave = 1;
         this.enemyCount = 0;
         this.waveDelayMs = 5000;
-        this.physics.world.gravity.y = 9.8 * this.PPM;
+        this.physics.world.gravity.y = 9.81 * this.PPM;
 
         this.isSpawnPaused = false;
         this.enemySpawnTimer = this.time.addEvent({});
