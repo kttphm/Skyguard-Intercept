@@ -38,7 +38,7 @@ export class MissileLaunchInput {
     constructor(scene) {
         this.scene = scene;
         this.active = false;
-        this.activeField = 'angle'; // 'angle' | 'velocity'
+        this.activeField = 'velocity'; // 'angle' | 'velocity'
         this.angleBuffer = '';
         this.velocityBuffer = '';
         this.errorText = '';
@@ -87,32 +87,27 @@ export class MissileLaunchInput {
 
         const rowsY = PANEL_PAD + 30;
 
-        this.angleRowBg = scene.add.graphics();
-        this.angleRowBg.setPosition(PANEL_PAD, rowsY);
         this.velocityRowBg = scene.add.graphics();
-        this.velocityRowBg.setPosition(PANEL_PAD, rowsY + ROW_H + ROW_GAP);
+        this.velocityRowBg.setPosition(PANEL_PAD, rowsY);
+        this.angleRowBg = scene.add.graphics();
+        this.angleRowBg.setPosition(PANEL_PAD, rowsY + ROW_H + ROW_GAP);
 
-        this.angleLabelText = scene.add.text(PANEL_PAD + 10, rowsY + 7, 'Angle (deg)', labelStyle);
-        this.velocityLabelText = scene.add.text(
-            PANEL_PAD + 10,
-            rowsY + ROW_H + ROW_GAP + 7,
-            'Velocity (m/s)',
-            labelStyle
-        );
+        this.velocityLabelText = scene.add.text(PANEL_PAD + 10, rowsY + 7, 'Velocity (m/s)', labelStyle);
+        this.angleLabelText = scene.add.text(PANEL_PAD + 10, rowsY + ROW_H + ROW_GAP + 7, 'Angle (deg)', labelStyle);
 
         const valueX = panelW - PANEL_PAD - 10;
-        this.angleValueText = scene.add.text(valueX, rowsY + 4, '', bodyStyle);
-        this.angleValueText.setOrigin(1, 0);
-        this.velocityValueText = scene.add.text(valueX, rowsY + ROW_H + ROW_GAP + 4, '', bodyStyle);
+        this.velocityValueText = scene.add.text(valueX, rowsY + 4, '', bodyStyle);
         this.velocityValueText.setOrigin(1, 0);
+        this.angleValueText = scene.add.text(valueX, rowsY + ROW_H + ROW_GAP + 4, '', bodyStyle);
+        this.angleValueText.setOrigin(1, 0);
 
-        this.angleHit = scene.add.zone(
+        this.velocityHit = scene.add.zone(
             PANEL_PAD + (panelW - PANEL_PAD * 2) / 2,
             rowsY + ROW_H / 2,
             panelW - PANEL_PAD * 2,
             ROW_H
         );
-        this.velocityHit = scene.add.zone(
+        this.angleHit = scene.add.zone(
             PANEL_PAD + (panelW - PANEL_PAD * 2) / 2,
             rowsY + ROW_H + ROW_GAP + ROW_H / 2,
             panelW - PANEL_PAD * 2,
@@ -152,7 +147,7 @@ export class MissileLaunchInput {
 
     begin() {
         this.active = true;
-        this.activeField = 'angle';
+        this.activeField = 'velocity';
         this.angleBuffer = '';
         this.velocityBuffer = '';
         this.errorText = '';
@@ -333,11 +328,11 @@ export class MissileLaunchInput {
 
     handleUpDown() {
         if (Phaser.Input.Keyboard.JustDown(this.upKey)) {
-            this.selectField(this.activeField === 'velocity' ? 'angle' : 'angle');
+            this.selectField(this.activeField === 'angle' ? 'velocity' : 'velocity');
             return;
         }
         if (Phaser.Input.Keyboard.JustDown(this.downKey)) {
-            this.selectField(this.activeField === 'angle' ? 'velocity' : 'velocity');
+            this.selectField(this.activeField === 'velocity' ? 'angle' : 'angle');
         }
     }
 

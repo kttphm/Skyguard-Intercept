@@ -8,14 +8,6 @@ export function alignSpriteRotationToVelocity(sprite) {
     sprite.rotation = Math.atan2(vy, vx);
 }
 
-export function velocityToDirArrow(vx, vy) {
-    if (vx === 0 && vy === 0) return '·';
-    const deg = (Phaser.Math.RadToDeg(Math.atan2(vy, vx)) + 360) % 360;
-    const arrows = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'];
-    const i = Math.floor((deg + 22.5) / 45) % 8;
-    return arrows[i];
-}
-
 export function toShiftedX(x, width, shiftOriginX) {
     const originX = shiftOriginX ?? (width / 2);
     return x - originX;
