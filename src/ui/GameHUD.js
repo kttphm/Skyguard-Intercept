@@ -44,10 +44,10 @@ export class GameHUD {
         const h = scene.scale.height;
         const ppm = scene.PPM;
 
-        const missileX = GameMath.toShiftedX(Math.round(enemy.x), w, scene.shiftOriginX) / ppm;
-        const missileY = GameMath.toShiftedY(Math.round(enemy.y), h, scene.shiftOriginY) / ppm;
-        const vx = enemy._savedVelocityX / ppm;
-        const vy = -enemy._savedVelocityY / ppm;
+        const missileX = Math.round((GameMath.toShiftedX(enemy.x, w, scene.shiftOriginX) / ppm) * 100) / 100;
+        const missileY = Math.round((GameMath.toShiftedY(enemy.y, h, scene.shiftOriginY) / ppm) * 100) / 100;
+        const vx = Math.round((enemy._savedVelocityX / ppm) * 100) / 100;
+        const vy = Math.round((-enemy._savedVelocityY / ppm) * 100) / 100;
 
         let timeToIntercept = null;
         if (interceptPoint && enemy._savedVelocityX !== 0) {

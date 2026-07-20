@@ -34,6 +34,9 @@ export default class Game extends Phaser.Scene {
 
         buildGameWorld(this, { houses: this.houses, missiles: this.missiles, ppm: this.PPM });
 
+        this.shiftOriginX = this.turret.x;
+        this.shiftOriginY = this.turret.y;
+
         this.gameHud = new GameHUD(this);
         this.missileLaunchInput = new MissileLaunchInput(this);
         this.keypadToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
