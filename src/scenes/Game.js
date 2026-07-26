@@ -4,7 +4,7 @@ import { GameHUD } from '../ui/GameHUD.js';
 import { MissileLaunchInput } from '../ui/MissileLaunchInput.js';
 import * as GameMath from '../utils/gameMath.js';
 import { dismissDomeThreatState } from '../systems/domeThreatFreeze.js';
-import { setupGameCollisions } from '../systems/gameCollisions.js';
+import { onEnemyHitGround, onPlayerHitGround, setupGameCollisions } from '../systems/gameCollisions.js';
 import { getEnemyCount, getSpawnTime } from '../systems/waveConfig.js';
 
 export default class Game extends Phaser.Scene {
@@ -61,6 +61,9 @@ export default class Game extends Phaser.Scene {
         }
 
         this.cleanupMissiles();
+
+        this.missiles.children.iterate((missile) => onPlayerHitGround(this, missile, null));
+        this.enemies.children.iterate((enemy) => onEnemyHitGround(this, enemy, null));
 
         [this.missiles, this.enemies].forEach((group) => {
             group.children.iterate(GameMath.alignSpriteRotationToVelocity);
