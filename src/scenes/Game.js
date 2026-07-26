@@ -42,10 +42,36 @@ export default class Game extends Phaser.Scene {
         this.missileLaunchInput = new MissileLaunchInput(this);
         this.keypadToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
 
+        this.createReturnButton();
+
         setupGameCollisions(this);
 
         this._nextEnemyId = 1;
         this.startEnemySpawning();
+    }
+
+    createReturnButton() {
+        const x = 200;
+        const y = 680;
+
+        this.returnButton = this.add.sprite(x, y, 'button3')
+            .setInteractive({ useHandCursor: true })
+            .setOrigin(0.5)
+            .setDepth(10)
+            .setScale(0.8);
+
+        this.returnButton.on('pointerdown', function () {
+            this.setTint(0xaaaaaa);
+        });
+
+        this.returnButton.on('pointerout', function () {
+            this.clearTint();
+        });
+
+        this.returnButton.on('pointerup', () => {
+            this.returnButton.clearTint();
+            this.scene.start('Menu');
+        });
     }
 
     update() {
@@ -145,9 +171,8 @@ export default class Game extends Phaser.Scene {
 
         this.add.sprite(640, 280, 'game_over').setScale(0.8);
 
-        const replayBtn = this.add.sprite(200, 570, 'button4').setInteractive({ useHandCursor: true });
-        const returnBtn = this.add.sprite(200, 650, 'button3').setInteractive({ useHandCursor: true });
-
+        const replayBtn = this.add.sprite(200, 615, 'button4').setInteractive({ useHandCursor: true });
+        replayBtn.setScale(0.8);
         replayBtn.on('pointerdown', function () {
             this.setTint(0xaaaaaa);
         });
@@ -161,18 +186,7 @@ export default class Game extends Phaser.Scene {
             this.scene.start('Game');
         });
 
-        returnBtn.on('pointerdown', function () {
-            this.setTint(0xaaaaaa);
-        });
-
-        returnBtn.on('pointerout', function () {
-            this.clearTint();
-        });
-
-        returnBtn.on('pointerup', () => {
-            returnBtn.clearTint();
-            this.scene.start('Menu');
-        });
+        this.returnButton.setVisible(true);
     }
 
     dismissDomeThreat() {
