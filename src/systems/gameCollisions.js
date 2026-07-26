@@ -59,6 +59,8 @@ function pickInterceptInfoMode() {
 }
 
 function onEnemyEnteredDome(scene, obj1, obj2) {
+    if (scene.isGameOver) return;
+
     const enemy = scene.enemies.contains(obj1) ? obj1 : obj2;
     if (!enemy || enemy._hasTriggeredStop) return;
     enemy._hasTriggeredStop = true;

@@ -6,19 +6,21 @@ export default class Preload extends Phaser.Scene {
 
     preload() {
         this.load.image('space', 'assets/bg1.png');
-        this.load.image('button1', 'assets/button1.png');
-        this.load.image('button2', 'assets/button2.png');
-        this.load.image('button3', 'assets/button3.png');
-        this.load.image('missile', 'assets/missile.png');
-        this.load.image('enemy', 'assets/enemy.png');
-
         this.load.image('background', 'assets/bg.png');
         this.load.image('tut', 'assets/tut.jpg');
 
+        this.load.image('button1', 'assets/button1.png');
+        this.load.image('button2', 'assets/button2.png');
+        this.load.image('button3', 'assets/button3.png');
+        this.load.image('button4', 'assets/button4.png');
+
+        this.load.image('missile', 'assets/missile.png');
+        this.load.image('enemy', 'assets/enemy.png');
         this.load.image('house1', 'assets/house1.png');
         this.load.image('house2', 'assets/house2.png');
 
         this.load.image('title', 'assets/Title.png');
+        this.load.image('game_over', 'assets/game_over.png');
     }
 
     create() {

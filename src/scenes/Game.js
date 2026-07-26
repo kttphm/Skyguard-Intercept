@@ -31,6 +31,7 @@ export default class Game extends Phaser.Scene {
         this.ruinedHouses = this.physics.add.group();
 
         this.isEnemyDetected = false;
+        this.isGameOver = false;
 
         buildGameWorld(this, { houses: this.houses, missiles: this.missiles, ppm: this.PPM });
 
@@ -48,6 +49,10 @@ export default class Game extends Phaser.Scene {
     }
 
     update() {
+        if (!this.isGameOver && this.houses.getLength() === 0) {
+            this.triggerGameOver();
+        }
+
         this.turret.update();
         this.gameHud.updateStatus(this.wave, this.houses.getLength());
 
@@ -120,6 +125,50 @@ export default class Game extends Phaser.Scene {
             ) {
                 missile.destroy();
             }
+        });
+    }
+
+    triggerGameOver() {
+        if (this.isGameOver) return;
+
+        this.isGameOver = true;
+        this.isSpawnPaused = true;
+        this.missileLaunchInput.hide();
+        this.gameHud.dismissInterceptionPanel();
+
+        if (this.enemySpawnTimer && this.enemySpawnTimer.active) {
+            this.enemySpawnTimer.remove(false);
+        }
+
+        this.add.sprite(640, 280, 'game_over').setScale(0.8);
+
+        const replayBtn = this.add.sprite(200, 570, 'button4').setInteractive({ useHandCursor: true });
+        const returnBtn = this.add.sprite(200, 650, 'button3').setInteractive({ useHandCursor: true });
+
+        replayBtn.on('pointerdown', function () {
+            this.setTint(0xaaaaaa);
+        });
+
+        replayBtn.on('pointerout', function () {
+            this.clearTint();
+        });
+
+        replayBtn.on('pointerup', () => {
+            replayBtn.clearTint();
+            this.scene.start('Game');
+        });
+
+        returnBtn.on('pointerdown', function () {
+            this.setTint(0xaaaaaa);
+        });
+
+        returnBtn.on('pointerout', function () {
+            this.clearTint();
+        });
+
+        returnBtn.on('pointerup', () => {
+            returnBtn.clearTint();
+            this.scene.start('Menu');
         });
     }
 

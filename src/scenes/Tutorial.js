@@ -7,6 +7,7 @@ export default class Tutorial extends Phaser.Scene {
     create() {
         this.background = this.add.sprite(640, 360, 'tut');
         this.background.setScale(1.05);
+        
         const returnBtn = this.physics.add.sprite(200, 650, 'button3');
 
         returnBtn.setInteractive({ useHandCursor: true });
