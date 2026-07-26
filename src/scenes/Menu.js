@@ -13,7 +13,6 @@ export default class Menu extends Phaser.Scene {
 
     initMap() {
         this.background = this.add.tileSprite(640, 360, 1280, 720, 'space');
-        this.title = this.add.image(640, 120, 'title');
     }
 
     initGameUi() {
@@ -23,12 +22,10 @@ export default class Menu extends Phaser.Scene {
         const startY = 370;
         const spacing = 80;
 
-        const playBtn  = this.add.sprite(centerX, startY, 'button');
-        const tutorialBtn = this.add.sprite(centerX, startY + spacing, 'button');
-        const settingBtn  = this.add.sprite(centerX, startY + spacing*2, 'button');
-        const creditBtn  = this.add.sprite(centerX, startY + spacing*3, 'button');
+        const playBtn  = this.add.sprite(centerX, startY + spacing*2, 'button1');
+        const tutorialBtn = this.add.sprite(centerX, startY + spacing*3, 'button2');
 
-        buttons.addMultiple([playBtn, tutorialBtn, settingBtn, creditBtn]);
+        buttons.addMultiple([playBtn, tutorialBtn]);
 
         buttons.children.iterate((btn) => {
             btn.setInteractive({ useHandCursor: true });
@@ -50,16 +47,6 @@ export default class Menu extends Phaser.Scene {
         tutorialBtn.on('pointerup', () => {
             tutorialBtn.clearTint();
             this.scene.start('Tutorial');
-        });
-        
-        settingBtn.on('pointerup', () => {
-            settingBtn.clearTint();
-            this.scene.launch('Setting');
-        });
-
-        creditBtn.on('pointerup', () => {
-            creditBtn.clearTint();
-            this.scene.start('Credit');
         });
     }
 }

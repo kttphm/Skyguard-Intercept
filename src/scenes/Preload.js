@@ -5,8 +5,10 @@ export default class Preload extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('space', 'assets/space.png');
-        this.load.image('button', 'assets/button.png');
+        this.load.image('space', 'assets/bg1.png');
+        this.load.image('button1', 'assets/button1.png');
+        this.load.image('button2', 'assets/button2.png');
+        this.load.image('button3', 'assets/button3.png');
         this.load.image('missile', 'assets/missile.png');
         this.load.image('enemy', 'assets/enemy.png');
 
