@@ -74,23 +74,6 @@ function onEnemyHitRuinedHouse(scene, obj1, obj2) {
     if (ruin.active) ruin.destroy();
 }
 
-const INTERCEPT_INFO_MODES = [1, 2, 3];
-const INTERCEPT_INFO_MODE_WEIGHTS = [0.25, 0.25, 0.5];
-
-function pickInterceptInfoMode() {
-    const roll = Math.random();
-    let cumulative = 0;
-
-    for (let i = 0; i < INTERCEPT_INFO_MODES.length; i++) {
-        cumulative += INTERCEPT_INFO_MODE_WEIGHTS[i];
-        if (roll < cumulative) {
-            return INTERCEPT_INFO_MODES[i];
-        }
-    }
-
-    return 3;
-}
-
 function onEnemyEnteredDome(scene, obj1, obj2) {
     if (scene.isGameOver) return;
 
@@ -105,11 +88,10 @@ function onEnemyEnteredDome(scene, obj1, obj2) {
     }
 
     Ballistics.renderMissileTrajectory(scene, enemy, 0.15);
-    scene.interceptInfoMode = pickInterceptInfoMode();
+    scene.interceptInfoMode = 1;
     scene.interceptPoint = Ballistics.pickInterceptPoint(scene, enemy, scene.trails);
-    const showInterceptMarker = scene.interceptInfoMode === 1 || scene.interceptInfoMode === 3;
-    Ballistics.setInterceptMarkerStyle(scene.interceptPoint, showInterceptMarker);
-    scene.gameHud.showInterceptionPanel(enemy, scene.interceptPoint, scene.interceptInfoMode);
+    Ballistics.setInterceptMarkerStyle(scene.interceptPoint, true);
+    scene.gameHud.showInterceptionPanel(enemy, scene.interceptPoint);
     scene.missileLaunchInput.begin();
 }
 

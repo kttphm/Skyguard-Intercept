@@ -12,7 +12,6 @@ export class GameHUD {
         this.lifeText = scene.add.text(20, 50, 'House : ', textStyle);
 
         this.interceptPointText = scene.add.text(20, INFO_LINE_Y, 'Intercept point : ', textStyle).setVisible(false);
-        this.timeToInterceptText = scene.add.text(20, INFO_LINE_Y, 'Time until intercept : ', textStyle).setVisible(false);
         this.missilePositionText = scene.add.text(20, INFO_LINE_Y, 'Missile position : ', textStyle).setVisible(false);
         this.missileVelocityText = scene.add.text(20, INFO_LINE_Y, 'Missile velocity : ', textStyle).setVisible(false);
     }
@@ -24,7 +23,6 @@ export class GameHUD {
 
     dismissInterceptionPanel() {
         this.interceptPointText.setVisible(false);
-        this.timeToInterceptText.setVisible(false);
         this.missilePositionText.setVisible(false);
         this.missileVelocityText.setVisible(false);
     }
@@ -34,7 +32,7 @@ export class GameHUD {
         return y + INFO_LINE_STEP;
     }
 
-    showInterceptionPanel(enemy, interceptPoint, infoMode) {
+    showInterceptionPanel(enemy, interceptPoint) {
         if (!enemy || !enemy.body) return;
 
         this.dismissInterceptionPanel();
@@ -49,12 +47,6 @@ export class GameHUD {
         const vx = Math.round((enemy._savedVelocityX / ppm) * 100) / 100;
         const vy = Math.round((-enemy._savedVelocityY / ppm) * 100) / 100;
 
-        let timeToIntercept = null;
-        if (interceptPoint && enemy._savedVelocityX !== 0) {
-            timeToIntercept =
-                Math.round(((interceptPoint.x - enemy.x) / enemy._savedVelocityX) * 1000) / 1000;
-        }
-
         let interceptX = null;
         let interceptY = null;
         if (interceptPoint) {
@@ -64,63 +56,24 @@ export class GameHUD {
 
         let y = INFO_LINE_Y;
 
-        switch (infoMode) {
-            case 1:
-                if (interceptPoint) {
-                    y = this.showLine(
-                        this.interceptPointText,
-                        `Intercept point : (${interceptX}, ${interceptY})`,
-                        y
-                    );
-                }
-                y = this.showLine(
-                    this.missilePositionText,
-                    `Missile position : (${missileX}, ${missileY})`,
-                    y
-                );
-                this.showLine(
-                    this.missileVelocityText,
-                    `Missile velocity : (${Math.round(vx)}, ${Math.round(vy)})`,
-                    y
-                );
-                break;
-            case 2:
-                if (timeToIntercept !== null) {
-                    y = this.showLine(
-                        this.timeToInterceptText,
-                        `Time until intercept : ${timeToIntercept}`,
-                        y
-                    );
-                }
-                y = this.showLine(
-                    this.missileVelocityText,
-                    `Missile velocity : (${Math.round(vx)}, ${Math.round(vy)})`,
-                    y
-                );
-                this.showLine(
-                    this.missilePositionText,
-                    `Missile position : (${missileX}, ${missileY})`,
-                    y
-                );
-                break;
-            case 3:
-                if (interceptPoint) {
-                    y = this.showLine(
-                        this.interceptPointText,
-                        `Intercept point : (${interceptX}, ${interceptY})`,
-                        y
-                    );
-                }
-                if (timeToIntercept !== null) {
-                    this.showLine(
-                        this.timeToInterceptText,
-                        `Time until intercept : ${timeToIntercept}`,
-                        y
-                    );
-                }
-                break;
-            default:
-                break;
+        if (interceptPoint) {
+            y = this.showLine(
+                this.interceptPointText,
+                `Intercept point : (${interceptX}, ${interceptY})`,
+                y
+            );
         }
+
+        y = this.showLine(
+            this.missilePositionText,
+            `Missile position : (${missileX}, ${missileY})`,
+            y
+        );
+
+        this.showLine(
+            this.missileVelocityText,
+            `Missile velocity : (${Math.round(vx)}, ${Math.round(vy)})`,
+            y
+        );
     }
 }
