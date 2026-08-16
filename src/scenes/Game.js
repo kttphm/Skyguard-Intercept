@@ -1,6 +1,7 @@
 import Enemy from '../gameObjects/Enemy.js';
 import { buildGameWorld } from '../world/buildGameWorld.js';
 import { GameHUD } from '../ui/GameHUD.js';
+import { InterceptCalculator } from '../ui/InterceptCalculator.js';
 import { MissileLaunchInput } from '../ui/MissileLaunchInput.js';
 import * as GameMath from '../utils/gameMath.js';
 import { dismissDomeThreatState } from '../systems/domeThreatFreeze.js';
@@ -40,7 +41,15 @@ export default class Game extends Phaser.Scene {
 
         this.gameHud = new GameHUD(this);
         this.missileLaunchInput = new MissileLaunchInput(this);
-        this.keypadToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
+        this.interceptCalculator = new InterceptCalculator(this);
+        this.calculatorToggleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.C);
+        this.dualInputTabKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+
+        this.input.keyboard.on('keydown-TAB', (event) => {
+            if (this.hasDualInputOpen()) {
+                event.preventDefault();
+            }
+        });
 
         this.createReturnButton();
 
@@ -82,7 +91,18 @@ export default class Game extends Phaser.Scene {
         this.turret.update();
         this.gameHud.updateStatus(this.wave, this.houses.getLength());
 
-        if (this.isEnemyDetected) {
+        if (Phaser.Input.Keyboard.JustDown(this.calculatorToggleKey)) {
+            this.interceptCalculator.toggle();
+        }
+
+        if (this.hasDualInputOpen()) {
+            this.handleDualInputTab();
+        }
+
+        if (this.interceptCalculator.isVisible()) {
+            this.interceptCalculator.update();
+        }
+        if (this.missileLaunchInput.isActive()) {
             this.missileLaunchInput.update();
         }
 
@@ -163,6 +183,7 @@ export default class Game extends Phaser.Scene {
         this.isGameOver = true;
         this.isSpawnPaused = true;
         this.missileLaunchInput.hide();
+        this.interceptCalculator.hide();
         this.gameHud.dismissInterceptionPanel();
 
         if (this.enemySpawnTimer && this.enemySpawnTimer.active) {
@@ -187,6 +208,44 @@ export default class Game extends Phaser.Scene {
         });
 
         this.returnButton.setVisible(true);
+    }
+
+    hasDualInputOpen() {
+        return this.interceptCalculator.isVisible() && this.missileLaunchInput.isActive();
+    }
+
+    focusLaunchInputField(field) {
+        if (!this.missileLaunchInput.isActive()) return;
+        this.missileLaunchInput.focusField(field);
+        if (this.interceptCalculator.isVisible()) {
+            this.interceptCalculator.clearFieldFocus();
+        }
+    }
+
+    focusCalculatorField(fieldId) {
+        if (!this.interceptCalculator.isVisible()) return;
+        this.interceptCalculator.focusField(fieldId);
+        if (this.missileLaunchInput.isActive()) {
+            this.missileLaunchInput.clearFieldFocus();
+        }
+    }
+
+    switchToLaunchPanel() {
+        this.focusLaunchInputField('velocity');
+    }
+
+    switchToCalculatorPanel() {
+        this.focusCalculatorField('mx');
+    }
+
+    handleDualInputTab() {
+        if (!Phaser.Input.Keyboard.JustDown(this.dualInputTabKey)) return;
+
+        if (this.missileLaunchInput.hasFieldFocus()) {
+            this.switchToCalculatorPanel();
+        } else if (this.interceptCalculator.hasFieldFocus()) {
+            this.switchToLaunchPanel();
+        }
     }
 
     dismissDomeThreat() {

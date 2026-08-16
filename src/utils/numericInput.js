@@ -21,8 +21,10 @@ export function canAppendDigit(buffer, digit) {
 
 export function applyAppendDigit(buffer, digit) {
     if (!canAppendDigit(buffer, digit)) return buffer;
-    if (buffer === '') return String(digit);
-    if (!buffer.includes('.') && wholePart(buffer) === '0') return String(digit);
+    if (buffer === '' || buffer === '-') return buffer === '-' ? `-${digit}` : String(digit);
+    if (!buffer.includes('.') && wholePart(buffer) === '0') {
+        return buffer.startsWith('-') ? `-${digit}` : String(digit);
+    }
     return buffer + String(digit);
 }
 
@@ -33,5 +35,13 @@ export function canAppendDecimal(buffer) {
 export function applyAppendDecimal(buffer) {
     if (buffer.includes('.')) return buffer;
     if (buffer === '') return '0.';
+    if (buffer === '-') return '-0.';
     return buffer + '.';
+}
+
+/** Toggle or start a leading minus (for signed position / velocity fields). */
+export function applyToggleSign(buffer) {
+    if (buffer === '' || buffer === '-') return '-';
+    if (buffer.startsWith('-')) return buffer.slice(1);
+    return `-${buffer}`;
 }

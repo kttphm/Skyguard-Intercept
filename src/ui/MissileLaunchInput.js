@@ -38,7 +38,8 @@ export class MissileLaunchInput {
     constructor(scene) {
         this.scene = scene;
         this.active = false;
-        this.activeField = 'velocity'; // 'angle' | 'velocity'
+        this.activeField = 'velocity'; // 'angle' | 'velocity' | null
+        this.lastFocusedField = 'velocity';
         this.angleBuffer = '';
         this.velocityBuffer = '';
         this.errorText = '';
@@ -148,11 +149,16 @@ export class MissileLaunchInput {
     begin() {
         this.active = true;
         this.activeField = 'velocity';
+        this.lastFocusedField = 'velocity';
         this.angleBuffer = '';
         this.velocityBuffer = '';
         this.errorText = '';
         this.container.setVisible(true);
-        this.refreshDisplay();
+        if (this.scene.hasDualInputOpen()) {
+            this.scene.focusLaunchInputField('velocity');
+        } else {
+            this.refreshDisplay();
+        }
     }
 
     hide() {
@@ -169,6 +175,7 @@ export class MissileLaunchInput {
 
     update() {
         if (!this.active) return;
+        if (this.scene.hasDualInputOpen() && !this.hasFieldFocus()) return;
 
         this.handleDigitInput();
         this.handleDecimalInput();
@@ -178,13 +185,41 @@ export class MissileLaunchInput {
         this.refreshDisplay();
     }
 
-    selectField(field) {
+    hasFieldFocus() {
+        return this.activeField !== null;
+    }
+
+    focusField(field) {
         if (!this.active) return;
         if (field !== 'angle' && field !== 'velocity') return;
         this.activeField = field;
+        this.lastFocusedField = field;
         this.errorText = '';
         this.previewAngle();
         this.refreshDisplay();
+    }
+
+    clearFieldFocus() {
+        if (!this.active) return;
+        if (this.activeField !== null) {
+            this.lastFocusedField = this.activeField;
+        }
+        this.activeField = null;
+        this.refreshDisplay();
+    }
+
+    restoreFieldFocus() {
+        if (!this.active) return;
+        this.focusField(this.lastFocusedField);
+    }
+
+    selectField(field) {
+        if (!this.active) return;
+        if (this.scene.hasDualInputOpen()) {
+            this.scene.focusLaunchInputField(field);
+            return;
+        }
+        this.focusField(field);
     }
 
     getActiveBuffer() {
