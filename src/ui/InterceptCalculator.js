@@ -332,11 +332,13 @@ export class InterceptCalculator {
         const nearest = nearestVelocityOption(result.speedMs, VELOCITY_OPTIONS);
         const angle = Math.round(result.angleDeg * 100) / 100;
         const speed = Math.round(result.speedMs * 100) / 100;
-        const time = Math.round(result.time * 100) / 100;
 
         this.errorText = '';
         this.resultText =
             `Angle = ${angle}°\nVelocity = ${speed} m/s  (~${nearest.speedMs})`;
+        if (this.scene.gameHud) {
+            this.scene.gameHud.unlockSolutionGuide();
+        }
         this.refreshDisplay();
     }
 
