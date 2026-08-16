@@ -1,3 +1,5 @@
+import { onMultiInterceptLaunch } from '../systems/multiIntercept.js';
+
 export default class Turret extends Phaser.Physics.Arcade.Sprite
 {
     constructor(scene, x, y, PPM, missileGroup) {
@@ -68,6 +70,11 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
                 missile.setVisible(true);
             }
         });
+
+        // Multi-intercept big enemies: brief resume, then next point (until last launch).
+        if (onMultiInterceptLaunch(this.scene)) {
+            return;
+        }
 
         this.scene.dismissDomeThreat();
         this.scene.dismissInterceptionPanel();

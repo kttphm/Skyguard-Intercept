@@ -7,6 +7,8 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
 
         this.PPM = PPM;
+        this.isBig = false;
+        this.hitPoints = 1;
 
         const houses = housesGroup.getChildren();
         if (houses.length === 0) {

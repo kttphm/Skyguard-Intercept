@@ -7,6 +7,13 @@ import * as GameMath from '../utils/gameMath.js';
 import { dismissDomeThreatState } from '../systems/domeThreatFreeze.js';
 import { onEnemyHitGround, onPlayerHitGround, setupGameCollisions } from '../systems/gameCollisions.js';
 import { getEnemyCount, getSpawnTime } from '../systems/waveConfig.js';
+import {
+    clearMultiIntercept,
+    isMultiInterceptActive,
+    isMultiInterceptWave,
+    setupBigEnemy,
+    updateMultiIntercept
+} from '../systems/multiIntercept.js';
 
 export default class Game extends Phaser.Scene {
 
@@ -24,6 +31,8 @@ export default class Game extends Phaser.Scene {
 
         this.isSpawnPaused = false;
         this.enemySpawnTimer = this.time.addEvent({});
+        this.waveTargetCount = getEnemyCount(this.wave);
+        this.bigEnemySpawnIndex = this.pickBigEnemySpawnIndex(this.wave, this.waveTargetCount);
 
         this.missiles = this.physics.add.group();
         this.enemies = this.physics.add.group();
@@ -33,6 +42,7 @@ export default class Game extends Phaser.Scene {
 
         this.isEnemyDetected = false;
         this.isGameOver = false;
+        this.multiIntercept = null;
 
         buildGameWorld(this, { houses: this.houses, missiles: this.missiles, ppm: this.PPM });
 
@@ -57,6 +67,11 @@ export default class Game extends Phaser.Scene {
 
         this._nextEnemyId = 1;
         this.startEnemySpawning();
+    }
+
+    pickBigEnemySpawnIndex(wave, count = getEnemyCount(wave)) {
+        if (!isMultiInterceptWave(wave)) return -1;
+        return Phaser.Math.Between(0, Math.max(0, count - 1));
     }
 
     createReturnButton() {
@@ -90,6 +105,7 @@ export default class Game extends Phaser.Scene {
 
         this.turret.update();
         this.gameHud.updateStatus(this.wave, this.houses.getLength());
+        updateMultiIntercept(this);
 
         if (Phaser.Input.Keyboard.JustDown(this.calculatorToggleKey)) {
             this.interceptCalculator.toggle();
@@ -117,10 +133,9 @@ export default class Game extends Phaser.Scene {
     }
 
     startEnemySpawning() {
-        if (this.isSpawnPaused) return;
+        if (this.isSpawnPaused || isMultiInterceptActive(this)) return;
 
-        const targetEnemyCount = getEnemyCount(this.wave);
-        if (this.enemyCount >= targetEnemyCount) {
+        if (this.enemyCount >= this.waveTargetCount) {
             this.checkForWave();
             return;
         }
@@ -137,10 +152,13 @@ export default class Game extends Phaser.Scene {
     }
 
     spawnEnemy() {
-        if (this.isEnemyDetected) return;
+        if (this.isEnemyDetected || isMultiInterceptActive(this)) return;
 
         const enemy = (new Enemy(this, this.houses, this.PPM)).setScale(0.7);
         if (enemy.active) {
+            if (this.enemyCount === this.bigEnemySpawnIndex) {
+                setupBigEnemy(enemy);
+            }
             enemy.enemyId = this._nextEnemyId++;
             this.enemies.add(enemy);
             enemy.launch();
@@ -148,10 +166,11 @@ export default class Game extends Phaser.Scene {
     }
 
     checkForWave() {
-        const enemyCount = getEnemyCount(this.wave);
-        if (enemyCount <= this.enemyCount) {
+        if (this.waveTargetCount <= this.enemyCount) {
             this.wave += 1;
             this.enemyCount = 0;
+            this.waveTargetCount = getEnemyCount(this.wave);
+            this.bigEnemySpawnIndex = this.pickBigEnemySpawnIndex(this.wave, this.waveTargetCount);
 
             this.pauseSpawning();
 
@@ -182,6 +201,7 @@ export default class Game extends Phaser.Scene {
 
         this.isGameOver = true;
         this.isSpawnPaused = true;
+        clearMultiIntercept(this);
         this.missileLaunchInput.hide();
         this.interceptCalculator.hide();
         this.gameHud.dismissInterceptionPanel();
@@ -262,6 +282,10 @@ export default class Game extends Phaser.Scene {
     }
 
     resumeSpawning() {
+        if (isMultiInterceptActive(this)) {
+            this.isSpawnPaused = true;
+            return;
+        }
         this.isSpawnPaused = false;
         this.startEnemySpawning();
     }

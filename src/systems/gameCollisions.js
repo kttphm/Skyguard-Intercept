@@ -1,6 +1,10 @@
 import * as GameMath from '../utils/gameMath.js';
 import * as Ballistics from './ballistics.js';
-import { freezeEnemiesAndMissiles } from './domeThreatFreeze.js';
+import { freezeEnemiesAndMissiles, resumeAllMotion } from './domeThreatFreeze.js';
+import {
+    beginMultiIntercept,
+    clearMultiIntercept
+} from './multiIntercept.js';
 import { HOUSE2_SCALING } from '../world/buildGameWorld.js';
 
 function getHouseLowerBoundY(scene) {
@@ -43,21 +47,53 @@ export function onEnemyHitGround(scene, obj1, obj2) {
 
     const lowerBoundY = getHouseLowerBoundY(scene);
     if (enemy.y >= lowerBoundY) {
+        handleEnemyDestroyed(scene, enemy);
         enemy.destroy();
     }
+}
+
+function handleEnemyDestroyed(scene, enemy) {
+    if (!enemy || scene.multiIntercept?.enemy !== enemy) return;
+
+    clearMultiIntercept(scene);
+    scene.missileLaunchInput?.hide();
+    scene.interceptCalculator?.hide();
+    scene.gameHud?.dismissInterceptionPanel();
+
+    if (scene.isEnemyDetected) {
+        scene.isEnemyDetected = false;
+        resumeAllMotion(scene);
+        if (scene.trails) scene.trails.clear(true, true);
+    }
+
+    scene.resumeSpawning();
 }
 
 function onEnemyHitMissile(scene, obj1, obj2) {
     const enemy = scene.missiles.contains(obj1) ? obj2 : obj1;
     const missile = scene.missiles.contains(obj1) ? obj1 : obj2;
-    if (enemy.active) enemy.destroy();
-    if (missile.active) missile.destroy();
+
+    if (missile?.active) missile.destroy();
+    if (!enemy?.active) return;
+
+    const hp = enemy.hitPoints ?? 1;
+    if (hp > 1) {
+        enemy.hitPoints = hp - 1;
+        enemy.setTint(0xf97316);
+        return;
+    }
+
+    handleEnemyDestroyed(scene, enemy);
+    enemy.destroy();
 }
 
 function onEnemyHitHouse(scene, obj1, obj2) {
     const enemy = scene.enemies.contains(obj1) ? obj1 : obj2;
     const house = scene.houses.contains(obj1) ? obj1 : obj2;
-    if (enemy.active) enemy.destroy();
+    if (enemy.active) {
+        handleEnemyDestroyed(scene, enemy);
+        enemy.destroy();
+    }
     if (house.active) {
         const { x, y } = house;
         house.destroy();
@@ -70,7 +106,10 @@ function onEnemyHitHouse(scene, obj1, obj2) {
 function onEnemyHitRuinedHouse(scene, obj1, obj2) {
     const enemy = scene.enemies.contains(obj1) ? obj1 : obj2;
     const ruin = scene.ruinedHouses.contains(obj1) ? obj1 : obj2;
-    if (enemy.active) enemy.destroy();
+    if (enemy.active) {
+        handleEnemyDestroyed(scene, enemy);
+        enemy.destroy();
+    }
     if (ruin.active) ruin.destroy();
 }
 
@@ -85,6 +124,10 @@ function onEnemyEnteredDome(scene, obj1, obj2) {
         scene.isEnemyDetected = true;
         freezeEnemiesAndMissiles(scene);
         scene.pauseSpawning();
+    }
+
+    if (enemy.isBig && beginMultiIntercept(scene, enemy)) {
+        return;
     }
 
     Ballistics.renderMissileTrajectory(scene, enemy, 0.15);

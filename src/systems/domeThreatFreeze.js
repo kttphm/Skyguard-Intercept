@@ -19,6 +19,10 @@ export function freezeEnemiesAndMissiles(scene) {
     scene.missiles.children.iterate(freezeBody);
 }
 
+export function freezeEnemiesOnly(scene) {
+    scene.enemies.children.iterate(freezeBody);
+}
+
 function resumeBody(targetSprite) {
     if (!targetSprite || !targetSprite.body || targetSprite.body.moves === true) return;
 
@@ -35,17 +39,26 @@ function resumeBody(targetSprite) {
     delete targetSprite._savedAngularAcceleration;
 }
 
+export function resumeAllMotion(scene) {
+    scene.enemies.children.iterate(resumeBody);
+    scene.missiles.children.iterate(resumeBody);
+}
+
 // Resumes motion, wave spawning, and clears trajectory trails after a dome threat.
+// Skips spawning resume while a multi-intercept sequence is still active.
 
 export function dismissDomeThreatState(scene) {
-    if (scene.isEnemyDetected) {
-        scene.isEnemyDetected = false;
-        scene.enemies.children.iterate(resumeBody);
-        scene.missiles.children.iterate(resumeBody);
-        scene.resumeSpawning();
+    if (!scene.isEnemyDetected) return;
 
-        if (scene.trails) {
-            scene.trails.clear(true, true);
-        }
+    const multiActive = Boolean(scene.multiIntercept?.active);
+    scene.isEnemyDetected = false;
+    resumeAllMotion(scene);
+
+    if (!multiActive) {
+        scene.resumeSpawning();
+    }
+
+    if (scene.trails) {
+        scene.trails.clear(true, true);
     }
 }
