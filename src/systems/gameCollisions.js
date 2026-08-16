@@ -118,6 +118,13 @@ function onEnemyEnteredDome(scene, obj1, obj2) {
 
     const enemy = scene.enemies.contains(obj1) ? obj1 : obj2;
     if (!enemy || enemy._hasTriggeredStop) return;
+
+    // Target house already gone — let it fly through with no intercept pause.
+    if (!enemy.targetHouse || !enemy.targetHouse.active) {
+        enemy._hasTriggeredStop = true;
+        return;
+    }
+
     enemy._hasTriggeredStop = true;
 
     if (!scene.isEnemyDetected) {
