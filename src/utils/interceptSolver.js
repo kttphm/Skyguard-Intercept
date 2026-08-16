@@ -37,9 +37,9 @@ export function solveInterceptLaunch(missilePos, interceptPos, missileVel) {
     const vxp = ix / T;
     const vyp = iy / T + 0.5 * G_MS2 * T;
     const speedMs = Math.sqrt(vxp*vxp + vyp*vyp);
-    const angleRad = Math.atan(vyp, vxp);
+    const angleRad = Math.atan2(vyp, vxp);
     const angleDeg = angleRad < 0 ? (angleRad + 2 * Math.PI) * (180 / Math.PI) : angleRad * (180 / Math.PI);
-    console.log('solveInterceptLaunch', { mx, my, ix, iy, vx, vy, T, vxp, vyp, speedMs, angleDeg });
+
     if (!Number.isFinite(speedMs) || !Number.isFinite(angleDeg)) {
         return { ok: false, message: 'Could not solve' };
     }
