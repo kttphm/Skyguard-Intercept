@@ -58,14 +58,19 @@ export class InterceptCalculator {
         this.buffers = Object.fromEntries(FIELDS.map((f) => [f.id, '']));
         this.resultText = '';
         this.errorText = '';
+        this.lastSolveInputs = null;
+        this.showGuideEnabled = false;
 
         const colW = 148;
         const panelW = PANEL_PAD * 2 + colW * 2 + COL_GAP;
         const rows = Math.ceil(FIELDS.length / 2);
         const fieldsH = rows * ROW_H + (rows - 1) * ROW_GAP;
-        const panelH = PANEL_PAD + 26 + fieldsH + 12 + 52 + 8 + 18;
+        const showBtnH = 28;
+        const panelH = PANEL_PAD + 26 + fieldsH + 12 + 52 + 8 + 18 + 8 + showBtnH - 30;
         this.panelW = panelW;
+        this.panelH = panelH;
         this.colW = colW;
+        this.showBtnH = showBtnH;
 
         const cx = scene.scale.width - panelW - PANEL_MARGIN;
         const cy = scene.scale.height - panelH - PANEL_MARGIN;
@@ -145,19 +150,84 @@ export class InterceptCalculator {
 
         this.resultLabel = scene.add.text(PANEL_PAD + 8, resultY + 2, 'Angle: —\nVelocity: —', resultStyle);
         this.errorLabel = scene.add.text(PANEL_PAD + 8, resultY + 35, '', errorStyle);
-        this.hintLabel = scene.add.text(
-            PANEL_PAD,
-            resultY + 56,
-            'Enter · Tab · − sign · C close',
-            hintStyle
-        );
 
-        const children = [bg, this.titleText, this.resultBg, this.resultLabel, this.errorLabel, this.hintLabel];
+        const actionBtnW = 96;
+        const actionBtnGap = 8;
+        const actionBtnY = resultY + 56 + 18 + 4 - 30;
+        this.actionBtnH = showBtnH;
+        this.calcBtnX = PANEL_PAD;
+        this.calcBtnY = actionBtnY;
+        this.calcBtnW = actionBtnW;
+        this.showBtnX = PANEL_PAD + actionBtnW + actionBtnGap;
+        this.showBtnY = actionBtnY;
+        this.showBtnW = actionBtnW;
+
+        this.calcBtnBg = scene.add.graphics();
+        this.calcBtnText = scene.add.text(
+            this.calcBtnX + actionBtnW / 2,
+            actionBtnY + showBtnH / 2,
+            'Calculate',
+            {
+                fontFamily: 'Arial',
+                fontSize: '12px',
+                color: '#e2e8f0',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5);
+        this.calcBtnHit = scene.add.zone(
+            this.calcBtnX + actionBtnW / 2,
+            actionBtnY + showBtnH / 2,
+            actionBtnW,
+            showBtnH
+        );
+        this.calcBtnHit.setInteractive({ useHandCursor: true });
+        this.calcBtnHit.on('pointerup', () => this.solve());
+        this.calcBtnHit.on('pointerover', () => this.drawCalcButton(true));
+        this.calcBtnHit.on('pointerout', () => this.drawCalcButton(false));
+
+        this.showBtnBg = scene.add.graphics();
+        this.showBtnText = scene.add.text(
+            this.showBtnX + actionBtnW / 2,
+            actionBtnY + showBtnH / 2,
+            'Show',
+            {
+                fontFamily: 'Arial',
+                fontSize: '12px',
+                color: '#e2e8f0',
+                fontStyle: 'bold'
+            }
+        ).setOrigin(0.5);
+        this.showBtnHit = scene.add.zone(
+            this.showBtnX + actionBtnW / 2,
+            actionBtnY + showBtnH / 2,
+            actionBtnW,
+            showBtnH
+        );
+        this.showBtnHit.setInteractive({ useHandCursor: true });
+        this.showBtnHit.on('pointerup', () => this.toggleSolutionGuide());
+        this.showBtnHit.on('pointerover', () => this.drawShowButton(true));
+        this.showBtnHit.on('pointerout', () => this.drawShowButton(false));
+
+        const children = [
+            bg,
+            this.titleText,
+            this.resultBg,
+            this.resultLabel,
+            this.errorLabel,
+            this.calcBtnBg,
+            this.calcBtnText,
+            this.calcBtnHit,
+            this.showBtnBg,
+            this.showBtnText,
+            this.showBtnHit
+        ];
         FIELDS.forEach((field) => {
             const view = this.fieldViews[field.id];
             children.push(view.rowBg, view.label, view.value, view.hit);
         });
         this.container.add(children);
+        this.drawCalcButton(false);
+        this.drawShowButton(false);
 
         this.backspaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
         this.enterKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
@@ -182,6 +252,52 @@ export class InterceptCalculator {
         this.refreshDisplay();
     }
 
+    clearGuideState({ closePanel = true } = {}) {
+        this.lastSolveInputs = null;
+        this.showGuideEnabled = false;
+        this.drawShowButton(false);
+        if (closePanel && this.scene.gameHud?.solutionOpen) {
+            this.scene.gameHud.closeSolutionPanel();
+        }
+    }
+
+    drawCalcButton(hovered = false) {
+        this.calcBtnBg.clear();
+        this.calcBtnBg.fillStyle(hovered ? 0x1e3a5f : 0x0f172a, 0.95);
+        this.calcBtnBg.lineStyle(1.5, hovered ? 0x7dd3fc : 0x38bdf8, 0.9);
+        this.calcBtnBg.fillRoundedRect(this.calcBtnX, this.calcBtnY, this.calcBtnW, this.actionBtnH, 5);
+        this.calcBtnBg.strokeRoundedRect(this.calcBtnX, this.calcBtnY, this.calcBtnW, this.actionBtnH, 5);
+        this.calcBtnText.setColor('#e2e8f0');
+    }
+
+    drawShowButton(hovered = false) {
+        if (!this.showBtnBg) return;
+
+        const enabled = this.showGuideEnabled;
+        const open = Boolean(this.scene.gameHud?.solutionOpen);
+        this.showBtnBg.clear();
+        this.showBtnBg.fillStyle(
+            enabled ? (hovered ? 0x1e3a5f : 0x0f172a) : 0x111827,
+            enabled ? 0.95 : 0.55
+        );
+        this.showBtnBg.lineStyle(1.5, enabled ? (hovered ? 0x7dd3fc : 0x38bdf8) : 0x334155, enabled ? 0.9 : 0.5);
+        this.showBtnBg.fillRoundedRect(this.showBtnX, this.showBtnY, this.showBtnW, this.actionBtnH, 5);
+        this.showBtnBg.strokeRoundedRect(this.showBtnX, this.showBtnY, this.showBtnW, this.actionBtnH, 5);
+        this.showBtnText.setText(open ? 'Hide' : 'Show');
+        this.showBtnText.setColor(enabled ? '#e2e8f0' : '#64748b');
+        this.showBtnHit.setVisible(enabled);
+    }
+
+    toggleSolutionGuide() {
+        if (!this.showGuideEnabled || !this.lastSolveInputs || !this.scene.gameHud) return;
+        if (this.scene.gameHud.solutionOpen) {
+            this.scene.gameHud.closeSolutionPanel();
+        } else {
+            this.scene.gameHud.openSolutionPanel(this.lastSolveInputs);
+        }
+        this.drawShowButton(false);
+    }
+
     isVisible() {
         return this.visible;
     }
@@ -196,6 +312,7 @@ export class InterceptCalculator {
         this.container.setVisible(true);
         this.errorText = '';
         this.resultText = '';
+        this.clearGuideState({ closePanel: false });
         if (this.scene.hasDualInputOpen()) {
             this.scene.focusCalculatorField('mx');
         } else {
@@ -260,6 +377,7 @@ export class InterceptCalculator {
         this.buffers[this.activeField] = next;
         this.errorText = '';
         this.resultText = '';
+        this.clearGuideState();
     }
 
     appendDecimal() {
@@ -269,6 +387,7 @@ export class InterceptCalculator {
         this.buffers[this.activeField] = next;
         this.errorText = '';
         this.resultText = '';
+        this.clearGuideState();
     }
 
     toggleSign() {
@@ -276,6 +395,7 @@ export class InterceptCalculator {
         this.buffers[this.activeField] = applyToggleSign(current);
         this.errorText = '';
         this.resultText = '';
+        this.clearGuideState();
     }
 
     backspace() {
@@ -283,6 +403,7 @@ export class InterceptCalculator {
         this.buffers[this.activeField] = current.slice(0, -1);
         this.errorText = '';
         this.resultText = '';
+        this.clearGuideState();
     }
 
     cycleField(forward = true) {
@@ -312,6 +433,7 @@ export class InterceptCalculator {
         if ([mx, my, ix, iy, vx, vy].some((v) => v === null)) {
             this.errorText = 'Fill every field with a number';
             this.resultText = '';
+            this.clearGuideState();
             this.refreshDisplay();
             return;
         }
@@ -325,6 +447,7 @@ export class InterceptCalculator {
         if (!result.ok) {
             this.errorText = result.message;
             this.resultText = '';
+            this.clearGuideState();
             this.refreshDisplay();
             return;
         }
@@ -336,9 +459,13 @@ export class InterceptCalculator {
         this.errorText = '';
         this.resultText =
             `Angle = ${angle}°\nVelocity = ${speed} m/s  (~${nearest.speedMs})`;
-        if (this.scene.gameHud) {
-            this.scene.gameHud.unlockSolutionGuide();
-        }
+        this.lastSolveInputs = {
+            missilePos: { x: mx, y: my },
+            interceptPos: { x: ix, y: iy },
+            missileVel: { x: vx, y: vy }
+        };
+        this.showGuideEnabled = true;
+        this.drawShowButton(false);
         this.refreshDisplay();
     }
 
