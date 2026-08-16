@@ -26,18 +26,18 @@ export default class Preload extends Phaser.Scene {
     create() {
         this.generateGroundTexture();
         this.generateDomeTexture();
+        this.generateMinInterceptDomeTexture();
         this.generateTurretBaseTexture();
         this.generateTurretBarrelTexture();
         this.scene.start('Menu');
     }
 
-    generateDomeTexture() {
-        const radius = 550; // 425
+    generateDomeArcTexture(key, radius, strokeColor, fillColor, fillAlpha) {
         const lineThickness = 0.5;
         const graphics = this.add.graphics();
 
-        graphics.lineStyle(lineThickness, 0x0f766e, 1);
-        graphics.fillStyle(0x0f766e, 0.12);
+        graphics.lineStyle(lineThickness, strokeColor, 1);
+        graphics.fillStyle(fillColor, fillAlpha);
 
         graphics.beginPath();
         graphics.arc(radius + lineThickness, radius + lineThickness, radius, Math.PI, 0, false);
@@ -46,8 +46,18 @@ export default class Preload extends Phaser.Scene {
         graphics.fillPath();
         graphics.strokePath();
 
-        graphics.generateTexture('dome', 2 * (radius + lineThickness), radius + lineThickness);
+        graphics.generateTexture(key, 2 * (radius + lineThickness), radius + lineThickness);
         graphics.destroy();
+    }
+
+    generateDomeTexture() {
+        // Outer threat / detection dome
+        this.generateDomeArcTexture('dome', 580, 0x0f766e, 0x0f766e, 0.12);
+    }
+
+    generateMinInterceptDomeTexture() {
+        // Inner dome: shortest allowed intercept range (no intercept markers inside)
+        this.generateDomeArcTexture('minInterceptDome', 380, 0xb45309, 0xb45309, 0.14);
     }
 
     generateGroundTexture() {

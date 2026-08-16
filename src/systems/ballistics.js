@@ -1,4 +1,8 @@
-import * as GameMath from '../utils/gameMath.js';
+/** Inner dome / shortest allowed intercept range (pixels from turret). */
+export const MIN_INTERCEPT_RADIUS_PX = 380;
+
+/** Prefer intercepts no farther than this from the turret (pixels). */
+export const MAX_INTERCEPT_RADIUS_PX = 500;
 
 export function renderMissileTrajectory(scene, enemy, dt) {
     if (!enemy || !enemy.body || !scene.ground) return;
@@ -32,26 +36,65 @@ export function renderMissileTrajectory(scene, enemy, dt) {
     }
 }
 
-export function pickInterceptPoint(scene, enemy, trails) {
-    if (!enemy || !enemy.body) return null;
+function distanceFromTurret(scene, x, y) {
+    const tx = scene.turret?.x ?? scene.scale.width / 2;
+    const ty = scene.turret?.y ?? scene.scale.height;
+    const dx = x - tx;
+    const dy = y - ty;
+    return Math.hypot(dx, dy);
+}
 
-    const possibleInterceptPoint = scene.add.group();
-    const h = scene.scale.height;
-    const shiftY = scene.shiftOriginY;
+function getInterceptRadiusBand(scene) {
+    const minR = scene.minInterceptRadiusPx ?? MIN_INTERCEPT_RADIUS_PX;
+    const maxR = scene.maxInterceptRadiusPx ?? MAX_INTERCEPT_RADIUS_PX;
+    return { minR, maxR };
+}
+
+/**
+ * Pick an intercept marker from the enemy trail.
+ * Candidates must lie outside the min-intercept dome and within a mid-range
+ * band from the turret (not too close, not too far).
+ */
+export function pickInterceptPoint(scene, enemy, trails) {
+    if (!enemy || !enemy.body || !trails) return null;
+
+    const { minR, maxR } = getInterceptRadiusBand(scene);
+    const idealR = (minR + maxR) * 0.5;
+    const candidates = [];
 
     trails.children.iterate((trail) => {
-        const ty = GameMath.toShiftedY(trail.y, h, shiftY);
-        const ey = GameMath.toShiftedY(enemy.y, h, shiftY);
-        if (200 <= ty && ty <= 0.75 * ey) {
-            possibleInterceptPoint.add(trail);
-        }
+        if (!trail || !trail.active) return;
+
+        const dist = distanceFromTurret(scene, trail.x, trail.y);
+        // Nothing inside the shortest-intercept dome, and nothing too far out.
+        if (dist < minR || dist > maxR) return;
+
+        candidates.push({
+            trail,
+            dist,
+            score: Math.abs(dist - idealR)
+        });
     });
 
-    const interceptPoint = Phaser.Utils.Array.GetRandom(possibleInterceptPoint.getChildren());
+    if (candidates.length === 0) {
+        // Soft fallback: outside min dome, closest to the mid-band (still prefer nearer max).
+        const fallback = [];
+        trails.children.iterate((trail) => {
+            if (!trail || !trail.active) return;
+            const dist = distanceFromTurret(scene, trail.x, trail.y);
+            if (dist < minR) return;
+            fallback.push({ trail, dist, score: Math.abs(dist - idealR) });
+        });
+        if (fallback.length === 0) return null;
+        fallback.sort((a, b) => a.score - b.score);
+        return fallback[0].trail;
+    }
 
-    if (!interceptPoint) return null;
-
-    return interceptPoint;
+    // Prefer points near the middle of the allowed band; random among the best third.
+    candidates.sort((a, b) => a.score - b.score);
+    const poolSize = Math.max(1, Math.ceil(candidates.length / 3));
+    const pool = candidates.slice(0, poolSize);
+    return Phaser.Utils.Array.GetRandom(pool).trail;
 }
 
 export function setInterceptMarkerStyle(interceptPoint, show) {

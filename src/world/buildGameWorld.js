@@ -1,10 +1,14 @@
 import Turret from '../gameObjects/Turret.js';
+import {
+    MAX_INTERCEPT_RADIUS_PX,
+    MIN_INTERCEPT_RADIUS_PX
+} from '../systems/ballistics.js';
 
 export const HOUSE_SCALING = 0.35;
 export const HOUSE2_SCALING = 0.53;
 
 // Spawns background, ground, dome, houses, and turret.
-// Mutates `scene` with `ground`, `dome`, `turret` and fills `houses` group.
+// Mutates `scene` with `ground`, `dome`, `minInterceptDome`, `turret` and fills `houses` group.
 
 export function buildGameWorld(scene, { houses, missiles, ppm }) {
     const canvas_W = scene.scale.width;
@@ -16,16 +20,25 @@ export function buildGameWorld(scene, { houses, missiles, ppm }) {
     const ground_lv = canvas_H - 87;
 
     const dome_R = scene.textures.get('dome').getSourceImage().height;
+    const minDome_R = scene.textures.get('minInterceptDome').getSourceImage().height;
 
     scene.ground = scene.add.sprite(centerX, centerY, 'background');
 
-
     scene.dome = scene.physics.add.sprite(centerX, ground_lv - dome_R / 2, 'dome');
+    scene.minInterceptDome = scene.add.image(
+        centerX,
+        ground_lv - minDome_R / 2,
+        'minInterceptDome'
+    );
+    scene.minInterceptDome.setDepth(1);
+    scene.minInterceptRadiusPx = MIN_INTERCEPT_RADIUS_PX;
+    scene.maxInterceptRadiusPx = MAX_INTERCEPT_RADIUS_PX;
+
     const DomeEdge_L = scene.dome.getBounds().left;
     const DomeEdge_R = scene.dome.getBounds().right;
 
-    const spacing_dome = 150;
-    const spacing_house = 30;
+    const spacing_dome = 220;
+    const spacing_house = 25;
     const house_count = 4;
     const house_scaling = HOUSE_SCALING;
 

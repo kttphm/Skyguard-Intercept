@@ -71,6 +71,7 @@ export default class Turret extends Phaser.Physics.Arcade.Sprite
 
         this.scene.dismissDomeThreat();
         this.scene.dismissInterceptionPanel();
+        this.scene.interceptCalculator?.hide();
     }
 
     handleTurretRotation() {
