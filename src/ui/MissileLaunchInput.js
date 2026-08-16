@@ -299,10 +299,10 @@ export class MissileLaunchInput {
             if (value > 170) {
                 return { message: 'Angle must be less than 170 degrees' };
             }
-        } else if (value < 10) {
-            return { message: 'Velocity must be at least 10 m/s' };
-        } else if (value > 100) {
-            return { message: 'Velocity must be less than 100 m/s' };
+        } else if (value < 20) {
+            return { message: 'Velocity must be at least 20 m/s' };
+        } else if (value > 120) {
+            return { message: 'Velocity must be less than 120 m/s' };
         }
 
         return null;

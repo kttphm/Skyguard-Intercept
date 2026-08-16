@@ -4,10 +4,8 @@ import {
     applyToggleSign
 } from '../utils/numericInput.js';
 import {
-    nearestVelocityOption,
     solveInterceptLaunch
 } from '../utils/interceptSolver.js';
-import { VELOCITY_OPTIONS } from './MissileLaunchInput.js';
 
 const PANEL_MARGIN = 16;
 const PANEL_PAD = 14;
@@ -452,13 +450,12 @@ export class InterceptCalculator {
             return;
         }
 
-        const nearest = nearestVelocityOption(result.speedMs, VELOCITY_OPTIONS);
         const angle = Math.round(result.angleDeg * 100) / 100;
         const speed = Math.round(result.speedMs * 100) / 100;
 
         this.errorText = '';
         this.resultText =
-            `Angle = ${angle}°\nVelocity = ${speed} m/s  (~${nearest.speedMs})`;
+            `Velocity = ${speed} m/s\nAngle = ${angle}°  `;
         this.lastSolveInputs = {
             missilePos: { x: mx, y: my },
             interceptPos: { x: ix, y: iy },
@@ -582,7 +579,7 @@ export class InterceptCalculator {
             view.rowBg.strokeRoundedRect(0, 0, this.colW, ROW_H, 5);
         });
 
-        this.resultLabel.setText(this.resultText ? `${this.resultText}` : 'Angle: —\nVelocity: —');
+        this.resultLabel.setText(this.resultText ? `${this.resultText}` : 'Velocity: —\nAngle: —');
         this.errorLabel.setText(this.errorText);
     }
 }
