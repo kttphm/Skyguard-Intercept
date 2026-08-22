@@ -177,6 +177,7 @@ export class MissileLaunchInput {
         if (!this.active) return;
         if (this.scene.hasDualInputOpen() && !this.hasFieldFocus()) return;
 
+        this.updateAngleFromMouse();
         this.handleDigitInput();
         this.handleDecimalInput();
         this.handleBackspace();
@@ -383,6 +384,30 @@ export class MissileLaunchInput {
         if (Number.isFinite(angle) && angle >= 10 && angle <= 170) {
             this.scene.turret.setTargetAngle(angle);
         }
+    }
+
+    updateAngleFromMouse() {
+        if (this.activeField !== 'angle') return;
+
+        const pointer = this.scene.input.activePointer;
+        const turret = this.scene.turret;
+        if (!pointer || !turret) return;
+
+        const pointerX = pointer.worldX;
+        const pointerY = pointer.worldY;
+        if (!Number.isFinite(pointerX) || !Number.isFinite(pointerY)) return;
+
+        const deltaX = pointerX - turret.x;
+        const deltaY = turret.y - pointerY;
+        if (deltaX === 0 && deltaY === 0) return;
+
+        const pointerAngle = Phaser.Math.RadToDeg(Math.atan2(deltaY, deltaX));
+        const angle = pointerAngle < 0
+            ? (pointerAngle < -90 ? 170 : 10)
+            : Phaser.Math.Clamp(pointerAngle, 10, 170);
+        this.angleBuffer = `${Math.round(angle * 100) / 100}`;
+        this.scene.turret.setTargetAngle(angle);
+        this.errorText = '';
     }
 
     refreshDisplay() {
