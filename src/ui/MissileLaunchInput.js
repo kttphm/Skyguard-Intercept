@@ -399,7 +399,7 @@ export class MissileLaunchInput {
     }
 
     updateVelocitySweep(delta) {
-        if (this.velocityLocked) return;
+        if (this.velocityLocked || this.activeField !== 'velocity') return;
         this.velocitySweepElapsed += delta;
     }
 
