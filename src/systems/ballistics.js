@@ -34,7 +34,6 @@ export function renderMissileTrajectory(scene, enemy, dt) {
 
         if (sx < -200 || sx > scene.scale.width + 200) break;
     }
-    console.log('trail added');
 }
 
 function distanceFromTurret(scene, x, y) {

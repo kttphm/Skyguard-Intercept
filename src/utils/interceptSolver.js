@@ -53,9 +53,10 @@ export function solveInterceptLaunch(missilePos, interceptPos, missileVel) {
     }
 
     steps.push(
-        `2) Find vx, vy of your launch:`,
-        `   vx = ix / T = ${fmt(vxp)}`,
-        `   vy = iy / T + ½gT = ${fmt(vyp)}`
+        `2) Find vx from s = vt:`,
+        `   vx = s / t = ${fmt(ix)} / ${fmt(T)} = ${fmt(vxp)} m/s`,
+        `3) Find vy from s = ut + ½at²:`,
+        `   vy = (s - ½at²) / t = (${fmt(iy)} - ½(${fmt(G_MS2)})(${fmt(T)}²)) / ${fmt(T)} = ${fmt(vyp)} m/s`
     );
 
     steps.push(
@@ -69,6 +70,18 @@ export function solveInterceptLaunch(missilePos, interceptPos, missileVel) {
         time: T,
         angleDeg,
         speedMs,
+        calculations: {
+            deltaX: ix - mx,
+            deltaY: iy - my,
+            distance: Math.sqrt((ix - mx) ** 2 + (iy - my) ** 2),
+            enemySpeedX: Math.abs(vx),
+            time: T,
+            launchVx: vxp,
+            launchVy: vyp,
+            speed: speedMs,
+            angleDeg,
+            gravity: G_MS2
+        },
         steps
     };
 }
@@ -86,7 +99,8 @@ function resolveFlightTime(mx, my, ix, iy, vx, vy, steps = []) {
 
         steps.push(
             `1) Find time until intercept:`,
-            `   T = |Δx / vx| = ${fmt(T)} s`
+            `   s = vt`,
+            `   t = s / v = ${fmt(Math.abs(dx))} / ${fmt(Math.abs(vx))} = ${fmt(T)} s`
         );
 
         return { ok: true, T };
@@ -116,7 +130,8 @@ function resolveFlightTime(mx, my, ix, iy, vx, vy, steps = []) {
 
     steps.push(
         `1) Find time until intercept:`,
-        `   T = ${fmt(T)} s`
+        `   Vertical path: solve y = ut + ½at²`,
+        `   t = ${fmt(T)} s`
     );
 
     return { ok: true, T };

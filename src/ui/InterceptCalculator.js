@@ -272,7 +272,7 @@ export class InterceptCalculator {
         if (!this.showBtnBg) return;
 
         const enabled = this.showGuideEnabled;
-        const open = Boolean(this.scene.gameHud?.solutionOpen);
+        const open = this.scene.scene.isActive('Solution');
         this.showBtnBg.clear();
         this.showBtnBg.fillStyle(
             enabled ? (hovered ? 0x1e3a5f : 0x0f172a) : 0x111827,
@@ -281,18 +281,17 @@ export class InterceptCalculator {
         this.showBtnBg.lineStyle(1.5, enabled ? (hovered ? 0x7dd3fc : 0x38bdf8) : 0x334155, enabled ? 0.9 : 0.5);
         this.showBtnBg.fillRoundedRect(this.showBtnX, this.showBtnY, this.showBtnW, this.actionBtnH, 5);
         this.showBtnBg.strokeRoundedRect(this.showBtnX, this.showBtnY, this.showBtnW, this.actionBtnH, 5);
-        this.showBtnText.setText(open ? 'Hide' : 'Show');
+        this.showBtnText.setText(open ? 'Open' : 'Show');
         this.showBtnText.setColor(enabled ? '#e2e8f0' : '#64748b');
         this.showBtnHit.setVisible(enabled);
     }
 
     toggleSolutionGuide() {
-        if (!this.showGuideEnabled || !this.lastSolveInputs || !this.scene.gameHud) return;
-        if (this.scene.gameHud.solutionOpen) {
-            this.scene.gameHud.closeSolutionPanel();
-        } else {
-            this.scene.gameHud.openSolutionPanel(this.lastSolveInputs);
-        }
+        if (!this.showGuideEnabled || !this.lastSolveInputs) return;
+        if (this.scene.scene.isActive('Solution')) return;
+
+        this.scene.scene.pause('Game');
+        this.scene.scene.launch('Solution', { solverInputs: this.lastSolveInputs });
         this.drawShowButton(false);
     }
 
