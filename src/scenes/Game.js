@@ -98,7 +98,7 @@ export default class Game extends Phaser.Scene {
         });
     }
 
-    update() {
+    update(time, delta) {
         if (!this.isGameOver && this.houses.getLength() === 0) {
             this.triggerGameOver();
         }
@@ -119,7 +119,7 @@ export default class Game extends Phaser.Scene {
             this.interceptCalculator.update();
         }
         if (this.missileLaunchInput.isActive()) {
-            this.missileLaunchInput.update();
+            this.missileLaunchInput.update(time, delta);
         }
 
         this.cleanupMissiles();

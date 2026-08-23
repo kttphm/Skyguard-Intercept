@@ -7,6 +7,11 @@ const PANEL_MARGIN = 16;
 const PANEL_PAD = 16;
 const ROW_H = 34;
 const ROW_GAP = 10;
+const VEL_SECTION_H = 72;
+const VEL_MIN = 10;
+const VEL_MAX = 120;
+/** Full round-trip duration (start → end → start), milliseconds. */
+const VEL_SWEEP_CYCLE_MS = 2200;
 
 const DIGIT_KEYS = [
     Phaser.Input.Keyboard.KeyCodes.ZERO,
@@ -42,10 +47,12 @@ export class MissileLaunchInput {
         this.lastFocusedField = 'velocity';
         this.angleBuffer = '';
         this.velocityBuffer = '';
+        this.velocityLocked = false;
+        this.velocitySweepElapsed = 0;
         this.errorText = '';
 
         const panelW = 320;
-        const panelH = 132;
+        const panelH = 188;
         this.panelW = panelW;
         this.panelH = panelH;
         const cx = scene.scale.width - panelW - PANEL_MARGIN;
@@ -78,6 +85,16 @@ export class MissileLaunchInput {
             fontSize: '22px',
             color: '#f8fafc'
         };
+        const hintStyle = {
+            fontFamily: 'Arial',
+            fontSize: '11px',
+            color: '#94a3b8'
+        };
+        const tickStyle = {
+            fontFamily: 'Arial',
+            fontSize: '11px',
+            color: '#94a3b8'
+        };
         const errorStyle = {
             fontFamily: 'Arial',
             fontSize: '12px',
@@ -87,30 +104,49 @@ export class MissileLaunchInput {
         this.promptText = scene.add.text(PANEL_PAD, PANEL_PAD, 'LAUNCH MISSILE', titleStyle);
 
         const rowsY = PANEL_PAD + 30;
+        this.velocitySectionY = rowsY;
+        this.angleRowY = rowsY + VEL_SECTION_H + ROW_GAP;
 
         this.velocityRowBg = scene.add.graphics();
-        this.velocityRowBg.setPosition(PANEL_PAD, rowsY);
+        this.velocityRowBg.setPosition(PANEL_PAD, this.velocitySectionY);
         this.angleRowBg = scene.add.graphics();
-        this.angleRowBg.setPosition(PANEL_PAD, rowsY + ROW_H + ROW_GAP);
+        this.angleRowBg.setPosition(PANEL_PAD, this.angleRowY);
 
-        this.velocityLabelText = scene.add.text(PANEL_PAD + 10, rowsY + 7, 'Velocity (m/s)', labelStyle);
-        this.angleLabelText = scene.add.text(PANEL_PAD + 10, rowsY + ROW_H + ROW_GAP + 7, 'Angle (deg)', labelStyle);
+        this.velocityLabelText = scene.add.text(PANEL_PAD + 10, this.velocitySectionY + 6, 'Velocity (m/s)', labelStyle);
+        this.velocityHintText = scene.add.text(
+            panelW - PANEL_PAD - 10,
+            this.velocitySectionY + 7,
+            'SPACE to lock',
+            hintStyle
+        );
+        this.velocityHintText.setOrigin(1, 0);
 
+        this.velocityTrackGfx = scene.add.graphics();
+        this.velocityTrackGfx.setPosition(PANEL_PAD, this.velocitySectionY);
+
+        this.velocityMinText = scene.add.text(0, 0, `${VEL_MIN}`, tickStyle);
+        this.velocityMidText = scene.add.text(0, 0, `${(VEL_MIN + VEL_MAX) / 2}`, tickStyle);
+        this.velocityMaxText = scene.add.text(0, 0, `${VEL_MAX}`, tickStyle);
+        this.velocityMinText.setOrigin(0, 0);
+        this.velocityMidText.setOrigin(0.5, 0);
+        this.velocityMaxText.setOrigin(1, 0);
+
+        this.velocityValueText = scene.add.text(PANEL_PAD + 10, this.velocitySectionY + 48, '', bodyStyle);
+
+        this.angleLabelText = scene.add.text(PANEL_PAD + 10, this.angleRowY + 7, 'Angle (deg)', labelStyle);
         const valueX = panelW - PANEL_PAD - 10;
-        this.velocityValueText = scene.add.text(valueX, rowsY + 4, '', bodyStyle);
-        this.velocityValueText.setOrigin(1, 0);
-        this.angleValueText = scene.add.text(valueX, rowsY + ROW_H + ROW_GAP + 4, '', bodyStyle);
+        this.angleValueText = scene.add.text(valueX, this.angleRowY + 4, '', bodyStyle);
         this.angleValueText.setOrigin(1, 0);
 
         this.velocityHit = scene.add.zone(
             PANEL_PAD + (panelW - PANEL_PAD * 2) / 2,
-            rowsY + ROW_H / 2,
+            this.velocitySectionY + VEL_SECTION_H / 2,
             panelW - PANEL_PAD * 2,
-            ROW_H
+            VEL_SECTION_H
         );
         this.angleHit = scene.add.zone(
             PANEL_PAD + (panelW - PANEL_PAD * 2) / 2,
-            rowsY + ROW_H + ROW_GAP + ROW_H / 2,
+            this.angleRowY + ROW_H / 2,
             panelW - PANEL_PAD * 2,
             ROW_H
         );
@@ -119,18 +155,33 @@ export class MissileLaunchInput {
         this.angleHit.on('pointerup', () => this.selectField('angle'));
         this.velocityHit.on('pointerup', () => this.selectField('velocity'));
 
-        const errorY = rowsY + ROW_H * 2 + ROW_GAP + 8;
+        const errorY = this.angleRowY + ROW_H + 8;
         this.errorLabel = scene.add.text(PANEL_PAD, errorY, '', errorStyle);
+
+        this.trackLeft = 10;
+        this.trackWidth = panelW - PANEL_PAD * 2 - 20;
+        this.trackY = 30;
+        this.trackH = 14;
+
+        const tickY = this.velocitySectionY + this.trackY + this.trackH + 2;
+        this.velocityMinText.setPosition(PANEL_PAD + this.trackLeft, tickY);
+        this.velocityMidText.setPosition(PANEL_PAD + this.trackLeft + this.trackWidth / 2, tickY);
+        this.velocityMaxText.setPosition(PANEL_PAD + this.trackLeft + this.trackWidth, tickY);
 
         this.container.add([
             bg,
             this.promptText,
-            this.angleRowBg,
             this.velocityRowBg,
-            this.angleLabelText,
+            this.angleRowBg,
             this.velocityLabelText,
-            this.angleValueText,
+            this.velocityHintText,
+            this.velocityTrackGfx,
+            this.velocityMinText,
+            this.velocityMidText,
+            this.velocityMaxText,
             this.velocityValueText,
+            this.angleLabelText,
+            this.angleValueText,
             this.errorLabel,
             this.angleHit,
             this.velocityHit
@@ -138,6 +189,7 @@ export class MissileLaunchInput {
 
         this.backspaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACKSPACE);
         this.enterKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        this.spaceKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.upKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
         this.downKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
         this.periodKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.PERIOD);
@@ -152,6 +204,8 @@ export class MissileLaunchInput {
         this.lastFocusedField = 'velocity';
         this.angleBuffer = '';
         this.velocityBuffer = '';
+        this.velocityLocked = false;
+        this.velocitySweepElapsed = 0;
         this.errorText = '';
         this.container.setVisible(true);
         if (this.scene.hasDualInputOpen()) {
@@ -165,6 +219,8 @@ export class MissileLaunchInput {
         this.active = false;
         this.angleBuffer = '';
         this.velocityBuffer = '';
+        this.velocityLocked = false;
+        this.velocitySweepElapsed = 0;
         this.errorText = '';
         this.container.setVisible(false);
     }
@@ -173,11 +229,14 @@ export class MissileLaunchInput {
         return this.active;
     }
 
-    update() {
+    update(time, delta) {
         if (!this.active) return;
         if (this.scene.hasDualInputOpen() && !this.hasFieldFocus()) return;
 
+        const dt = typeof delta === 'number' ? delta : this.scene.game.loop.delta;
+        this.updateVelocitySweep(dt);
         this.updateAngleFromMouse();
+        this.handleSpaceLock();
         this.handleDigitInput();
         this.handleDecimalInput();
         this.handleBackspace();
@@ -223,35 +282,23 @@ export class MissileLaunchInput {
         this.focusField(field);
     }
 
-    getActiveBuffer() {
-        return this.activeField === 'angle' ? this.angleBuffer : this.velocityBuffer;
-    }
-
-    setActiveBuffer(next) {
-        if (this.activeField === 'angle') {
-            this.angleBuffer = next;
-        } else {
-            this.velocityBuffer = next;
-        }
-    }
-
     appendDigit(digit) {
-        if (!this.active) return;
-        const current = this.getActiveBuffer();
+        if (!this.active || this.activeField !== 'angle') return;
+        const current = this.angleBuffer;
         const next = applyAppendDigit(current, digit);
         if (next === current) return;
-        this.setActiveBuffer(next);
+        this.angleBuffer = next;
         this.errorText = '';
         this.previewAngle();
         this.refreshDisplay();
     }
 
     appendDecimal() {
-        if (!this.active) return;
-        const current = this.getActiveBuffer();
+        if (!this.active || this.activeField !== 'angle') return;
+        const current = this.angleBuffer;
         const next = applyAppendDecimal(current);
         if (next === current) return;
-        this.setActiveBuffer(next);
+        this.angleBuffer = next;
         this.errorText = '';
         this.previewAngle();
         this.refreshDisplay();
@@ -259,8 +306,16 @@ export class MissileLaunchInput {
 
     backspace() {
         if (!this.active) return;
-        const current = this.getActiveBuffer();
-        this.setActiveBuffer(current.slice(0, -1));
+
+        if (this.activeField === 'velocity') {
+            if (this.velocityLocked) {
+                this.unlockVelocity();
+            }
+            return;
+        }
+
+        if (this.activeField !== 'angle') return;
+        this.angleBuffer = this.angleBuffer.slice(0, -1);
         this.errorText = '';
         this.previewAngle();
         this.refreshDisplay();
@@ -271,39 +326,45 @@ export class MissileLaunchInput {
         if (invalidField === 'angle') {
             this.angleBuffer = '';
         } else if (invalidField === 'velocity') {
-            this.velocityBuffer = '';
+            this.unlockVelocity();
         }
         this.previewAngle();
         this.refreshDisplay();
     }
 
     validateField(field) {
-        const buffer = field === 'angle' ? this.angleBuffer : this.velocityBuffer;
+        if (field === 'velocity') {
+            if (!this.velocityLocked || this.velocityBuffer === '') {
+                return { message: 'Press SPACE to lock velocity' };
+            }
 
+            const value = Number(this.velocityBuffer);
+            if (!Number.isFinite(value)) {
+                return { message: 'Invalid velocity' };
+            }
+            if (value < VEL_MIN) {
+                return { message: `Velocity must be at least ${VEL_MIN} m/s` };
+            }
+            if (value > VEL_MAX) {
+                return { message: `Velocity must be at most ${VEL_MAX} m/s` };
+            }
+            return null;
+        }
+
+        const buffer = this.angleBuffer;
         if (buffer === '') {
-            return {
-                message: field === 'angle' ? 'Enter angle' : 'Enter velocity'
-            };
+            return { message: 'Enter angle' };
         }
 
         const value = Number(buffer);
         if (!Number.isFinite(value)) {
-            return {
-                message: field === 'angle' ? 'Invalid angle' : 'Invalid velocity'
-            };
+            return { message: 'Invalid angle' };
         }
-
-        if (field === 'angle') {
-            if (value < 10) {
-                return { message: 'Angle must be at least 10 degrees' };
-            }
-            if (value > 170) {
-                return { message: 'Angle must be less than 170 degrees' };
-            }
-        } else if (value < 20) {
-            return { message: 'Velocity must be at least 20 m/s' };
-        } else if (value > 120) {
-            return { message: 'Velocity must be less than 120 m/s' };
+        if (value < 10) {
+            return { message: 'Angle must be at least 10 degrees' };
+        }
+        if (value > 170) {
+            return { message: 'Angle must be less than 170 degrees' };
         }
 
         return null;
@@ -328,13 +389,59 @@ export class MissileLaunchInput {
             return;
         }
 
-        // Active field is valid; move to the other field if launch isn't ready yet.
         const otherField = this.activeField === 'angle' ? 'velocity' : 'angle';
         this.activeField = otherField;
         this.refreshDisplay();
     }
 
+    updateVelocitySweep(delta) {
+        if (this.velocityLocked) return;
+        this.velocitySweepElapsed += delta;
+    }
+
+    getSweepProgress() {
+        const cycle = ((this.velocitySweepElapsed % VEL_SWEEP_CYCLE_MS) + VEL_SWEEP_CYCLE_MS) % VEL_SWEEP_CYCLE_MS;
+        const t = cycle / VEL_SWEEP_CYCLE_MS;
+        // Ping-pong: 0 → 1 → 0
+        return t < 0.5 ? t * 2 : 2 - t * 2;
+    }
+
+    getLiveVelocity() {
+        if (this.velocityLocked) {
+            return Number(this.velocityBuffer);
+        }
+        const progress = this.getSweepProgress();
+        return Math.round(VEL_MIN + progress * (VEL_MAX - VEL_MIN));
+    }
+
+    lockVelocity() {
+        const velocity = this.getLiveVelocity();
+        this.velocityBuffer = `${velocity}`;
+        this.velocityLocked = true;
+        this.errorText = '';
+    }
+
+    unlockVelocity() {
+        this.velocityLocked = false;
+        this.velocityBuffer = '';
+        this.errorText = '';
+    }
+
+    handleSpaceLock() {
+        if (!Phaser.Input.Keyboard.JustDown(this.spaceKey)) return;
+        if (this.activeField !== 'velocity') return;
+
+        if (this.velocityLocked) {
+            this.unlockVelocity();
+        } else {
+            this.lockVelocity();
+        }
+        this.refreshDisplay();
+    }
+
     handleDigitInput() {
+        if (this.activeField !== 'angle') return;
+
         this.digitKeys.forEach((key, digit) => {
             if (Phaser.Input.Keyboard.JustDown(key)) {
                 this.appendDigit(digit);
@@ -349,6 +456,7 @@ export class MissileLaunchInput {
     }
 
     handleDecimalInput() {
+        if (this.activeField !== 'angle') return;
         if (
             Phaser.Input.Keyboard.JustDown(this.periodKey) ||
             Phaser.Input.Keyboard.JustDown(this.numpadDecimalKey)
@@ -364,11 +472,11 @@ export class MissileLaunchInput {
 
     handleUpDown() {
         if (Phaser.Input.Keyboard.JustDown(this.upKey)) {
-            this.selectField(this.activeField === 'angle' ? 'velocity' : 'velocity');
+            this.selectField('velocity');
             return;
         }
         if (Phaser.Input.Keyboard.JustDown(this.downKey)) {
-            this.selectField(this.activeField === 'velocity' ? 'angle' : 'angle');
+            this.selectField('angle');
         }
     }
 
@@ -410,23 +518,71 @@ export class MissileLaunchInput {
         this.errorText = '';
     }
 
+    drawVelocityTrack(active) {
+        const g = this.velocityTrackGfx;
+        g.clear();
+
+        const left = this.trackLeft;
+        const top = this.trackY;
+        const w = this.trackWidth;
+        const h = this.trackH;
+
+        g.fillStyle(0x020617, 0.95);
+        g.fillRoundedRect(left, top, w, h, 4);
+        g.lineStyle(1, active ? 0x38bdf8 : 0x475569, active ? 0.9 : 0.55);
+        g.strokeRoundedRect(left, top, w, h, 4);
+
+        // Scale ticks
+        const tickCount = 11;
+        for (let i = 0; i <= tickCount; i += 1) {
+            const x = left + (w * i) / tickCount;
+            const major = i % 5 === 0;
+            g.lineStyle(1, major ? 0x94a3b8 : 0x475569, major ? 0.9 : 0.55);
+            g.beginPath();
+            g.moveTo(x, top);
+            g.lineTo(x, top + (major ? h : h * 0.55));
+            g.strokePath();
+        }
+
+        const progress = this.velocityLocked
+            ? (Number(this.velocityBuffer) - VEL_MIN) / (VEL_MAX - VEL_MIN)
+            : this.getSweepProgress();
+        const markerX = left + Phaser.Math.Clamp(progress, 0, 1) * w;
+
+        // Fill behind marker
+        g.fillStyle(this.velocityLocked ? 0x22c55e : 0x38bdf8, this.velocityLocked ? 0.35 : 0.22);
+        g.fillRoundedRect(left + 1, top + 1, Math.max(0, markerX - left - 1), h - 2, 3);
+
+        // Moving / locked bar
+        const barW = 4;
+        g.fillStyle(this.velocityLocked ? 0x4ade80 : 0xf8fafc, 1);
+        g.fillRect(markerX - barW / 2, top - 3, barW, h + 6);
+        g.lineStyle(1, this.velocityLocked ? 0x166534 : 0x0ea5e9, 0.9);
+        g.strokeRect(markerX - barW / 2, top - 3, barW, h + 6);
+    }
+
     refreshDisplay() {
         const angleDisplay = this.angleBuffer === '' ? '_' : this.angleBuffer;
-        const velDisplay = this.velocityBuffer === '' ? '_' : this.velocityBuffer;
         this.angleValueText.setText(angleDisplay);
-        this.velocityValueText.setText(velDisplay);
 
-        const drawRow = (g, active) => {
+        const liveVelocity = this.getLiveVelocity();
+        const velSuffix = this.velocityLocked ? ' LOCKED' : '';
+        this.velocityValueText.setText(`${liveVelocity}${velSuffix}`);
+        this.velocityValueText.setColor(this.velocityLocked ? '#4ade80' : '#f8fafc');
+        this.velocityHintText.setText(this.velocityLocked ? 'SPACE to unlock' : 'SPACE to lock');
+
+        const drawRow = (g, active, height) => {
             g.clear();
             g.fillStyle(active ? 0x1e3a5f : 0x0f172a, active ? 0.85 : 0.55);
             g.lineStyle(1, active ? 0x38bdf8 : 0x334155, active ? 0.9 : 0.6);
             const w = this.panelW - PANEL_PAD * 2;
-            g.fillRoundedRect(0, 0, w, ROW_H, 6);
-            g.strokeRoundedRect(0, 0, w, ROW_H, 6);
+            g.fillRoundedRect(0, 0, w, height, 6);
+            g.strokeRoundedRect(0, 0, w, height, 6);
         };
 
-        drawRow(this.angleRowBg, this.activeField === 'angle');
-        drawRow(this.velocityRowBg, this.activeField === 'velocity');
+        drawRow(this.velocityRowBg, this.activeField === 'velocity', VEL_SECTION_H);
+        drawRow(this.angleRowBg, this.activeField === 'angle', ROW_H);
+        this.drawVelocityTrack(this.activeField === 'velocity');
 
         this.errorLabel.setText(this.errorText);
     }
