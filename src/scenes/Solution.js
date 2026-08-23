@@ -53,7 +53,6 @@ export default class Solution extends Phaser.Scene {
         const width = this.scale.width;
         const height = this.scale.height;
         this.add.image(width / 2, height / 2, 'background').setDisplaySize(width, height);
-        this.add.rectangle(0, height - 52, width, 52, 0x202a30).setOrigin(0);
 
         this.add.text(32, 24, 'INTERCEPT SOLUTION', {
             fontFamily: 'Arial', fontSize: '24px', color: COLORS.ink, fontStyle: 'bold'
@@ -198,16 +197,13 @@ export default class Solution extends Phaser.Scene {
     updateStage() {
         const { missilePos, interceptPos, missileVel } = this.solverInputs;
         const c = this.calculations;
-        const timeStep = Math.abs(missileVel.x) > 1e-6
-            ? `s = vt\nt = s / v\nt = ${format(c.distance)} / ${format(c.enemySpeedX)} = ${format(c.time)} s`
-            : `The path is vertical, so solve y = ut + 1/2 at^2.\nThe positive solution is t = ${format(c.time)} s`;
         const stageText = [
             `1. Locate the intercept\n\nMissile: (${format(missilePos.x)}, ${format(missilePos.y)}) m\nIntercept: (${format(interceptPos.x)}, ${format(interceptPos.y)}) m\n\nThe amber point is where the missile will be met.`,
-            `2. Find time until intercept\n\nDelta x = ix - mx\nDelta x = ${format(interceptPos.x)} - ${format(missilePos.x)} = ${format(c.deltaX)} m\n\n${timeStep}`,
-            `3. Find horizontal launch velocity\n\nThe interceptor must cover the horizontal distance in t seconds.\n\ns = vt\nvx = s / t\nvx = ${format(interceptPos.x)} / ${format(c.time)} = ${format(c.launchVx)} m/s`,
-            `4. Find vertical launch velocity\n\ns = ut + 1/2 at^2\nu = (s - 1/2 at^2) / t\n\nvy = (${format(interceptPos.y)} - 1/2 * ${format(c.gravity)} * ${format(c.time)}^2) / ${format(c.time)}\nvy = ${format(c.launchVy)} m/s`,
-            `5. Add the velocity components\n\nVelocity vector = (vx, vy)\n= (${format(c.launchVx)}, ${format(c.launchVy)}) m/s\n\nv = sqrt(vx^2 + vy^2)\nv = ${format(c.speed)} m/s`,
-            `6. Find the launch angle\n\nangle = atan2(vy, vx)\nangle = atan2(${format(c.launchVy)}, ${format(c.launchVx)})\nangle = ${format(c.angleDeg)} degrees\n\nLaunch with ${format(c.speed)} m/s at ${format(c.angleDeg)} degrees.`
+            `2. Find time until intercept\n\nΔx = x₂ - x₁\nΔx = ${format(interceptPos.x)} - ${format(missilePos.x)}\n   = ${format(c.deltaX)} m\n\ns = vt\nt = s / v\nt = ${format(c.distance)} / ${format(c.enemySpeedX)}\n  = ${format(c.time)} s`,
+            `3. Find horizontal launch velocity\n\ns = vt\nv = s / t\nv = ${format(interceptPos.x)} / ${format(c.time)}\n  = ${format(c.launchVx)} m/s`,
+            `4. Find vertical launch velocity\n\ns = ut + ½at²\nu = (s - ½at²) / t\n\nu = (${format(interceptPos.y)} - 0.5 × ${format(c.gravity)} × ${format(c.time)}²) / ${format(c.time)}\nu = ${format(c.launchVy)} m/s`,
+            `5. Add the velocity components\n\nVelocity vector = (vₓ, vᵧ)\n                = (${format(c.launchVx)}, ${format(c.launchVy)}) m/s\n\nv = √(vₓ² + vᵧ²)\nv = ${format(c.speed)} m/s`,
+            `6. Find the launch angle\n\nangle = tan⁻¹(vᵧ / vₓ)\n      = tan⁻¹(${format(c.launchVy)} / ${format(c.launchVx)})\n      = ${format(c.angleDeg)}°\n\nLaunch with ${format(c.speed)} m/s at ${format(c.angleDeg)}°`
         ];
         this.stepText.setText(stageText[Math.min(this.stage, stageText.length - 1)]);
         this.progressText.setText(`STEP ${Math.min(this.stage + 1, stageText.length)} / ${stageText.length}`);
