@@ -51,6 +51,7 @@ export class MissileLaunchInput {
         this.angleBuffer = '';
         this.velocityBuffer = '';
         this.velocityLocked = false;
+        this.angleLocked = false;
         this.velocitySweepElapsed = 0;
         this.errorText = '';
 
@@ -209,6 +210,7 @@ export class MissileLaunchInput {
         this.angleBuffer = '';
         this.velocityBuffer = '';
         this.velocityLocked = false;
+        this.angleLocked = false;
         this.velocitySweepElapsed = 0;
         this.errorText = '';
         this.container.setVisible(true);
@@ -224,6 +226,7 @@ export class MissileLaunchInput {
         this.angleBuffer = '';
         this.velocityBuffer = '';
         this.velocityLocked = false;
+        this.angleLocked = false;
         this.velocitySweepElapsed = 0;
         this.errorText = '';
         this.container.setVisible(false);
@@ -287,22 +290,24 @@ export class MissileLaunchInput {
     }
 
     appendDigit(digit) {
-        if (!this.active || this.activeField !== 'angle') return;
+        if (!this.active || this.activeField !== 'angle' || this.angleLocked) return;
         const current = this.angleBuffer;
         const next = applyAppendDigit(current, digit);
         if (next === current) return;
         this.angleBuffer = next;
+        this.angleLocked = false;
         this.errorText = '';
         this.previewAngle();
         this.refreshDisplay();
     }
 
     appendDecimal() {
-        if (!this.active || this.activeField !== 'angle') return;
+        if (!this.active || this.activeField !== 'angle' || this.angleLocked) return;
         const current = this.angleBuffer;
         const next = applyAppendDecimal(current);
         if (next === current) return;
         this.angleBuffer = next;
+        this.angleLocked = false;
         this.errorText = '';
         this.previewAngle();
         this.refreshDisplay();
@@ -319,6 +324,11 @@ export class MissileLaunchInput {
         }
 
         if (this.activeField !== 'angle') return;
+        if (this.angleLocked) {
+            this.unlockAngle();
+            this.refreshDisplay();
+            return;
+        }
         this.angleBuffer = this.angleBuffer.slice(0, -1);
         this.errorText = '';
         this.previewAngle();
@@ -329,6 +339,7 @@ export class MissileLaunchInput {
         this.errorText = message;
         if (invalidField === 'angle') {
             this.angleBuffer = '';
+            this.angleLocked = false;
         } else if (invalidField === 'velocity') {
             this.unlockVelocity();
         }
@@ -377,25 +388,21 @@ export class MissileLaunchInput {
     confirm() {
         if (!this.active) return;
 
-        const activeError = this.validateField(this.activeField);
-        if (activeError) {
-            this.rejectValue(activeError.message, this.activeField);
-            return;
-        }
-
-        this.errorText = '';
-
-        const angleError = this.validateField('angle');
-        const velocityError = this.validateField('velocity');
-        if (!angleError && !velocityError) {
+        if (this.angleLocked && this.velocityLocked) {
             this.scene.turret.launchMissileAt(Number(this.angleBuffer), Number(this.velocityBuffer));
             this.hide();
             return;
         }
 
-        const otherField = this.activeField === 'angle' ? 'velocity' : 'angle';
-        this.activeField = otherField;
-        this.refreshDisplay();
+        const activeLocked = this.activeField === 'angle'
+            ? this.angleLocked
+            : this.velocityLocked;
+        if (activeLocked) {
+            const otherField = this.activeField === 'angle' ? 'velocity' : 'angle';
+            this.activeField = otherField;
+            this.errorText = '';
+            this.refreshDisplay();
+        }
     }
 
     updateVelocitySweep(delta) {
@@ -431,14 +438,36 @@ export class MissileLaunchInput {
         this.errorText = '';
     }
 
+    lockAngle() {
+        this.angleLocked = true;
+        this.errorText = '';
+    }
+
+    unlockAngle() {
+        this.angleLocked = false;
+        this.errorText = '';
+    }
+
     handleSpaceLock() {
         if (!Phaser.Input.Keyboard.JustDown(this.spaceKey)) return;
-        if (this.activeField !== 'velocity') return;
 
-        if (this.velocityLocked) {
-            this.unlockVelocity();
-        } else {
-            this.lockVelocity();
+        if (this.activeField === 'velocity') {
+            if (this.velocityLocked) {
+                this.unlockVelocity();
+            } else {
+                this.lockVelocity();
+            }
+        } else if (this.activeField === 'angle') {
+            if (this.angleLocked) {
+                this.unlockAngle();
+            } else {
+                const angleError = this.validateField('angle');
+                if (angleError) {
+                    this.rejectValue(angleError.message, 'angle');
+                    return;
+                }
+                this.lockAngle();
+            }
         }
         this.refreshDisplay();
     }
@@ -490,7 +519,7 @@ export class MissileLaunchInput {
     }
 
     previewAngle() {
-        if (this.activeField !== 'angle' || this.angleBuffer === '') return;
+        if (this.activeField !== 'angle' || this.angleLocked || this.angleBuffer === '') return;
 
         const angle = Number(this.angleBuffer);
         if (Number.isFinite(angle) && angle >= 10 && angle <= 170) {
@@ -499,7 +528,7 @@ export class MissileLaunchInput {
     }
 
     updateAngleFromMouse() {
-        if (this.activeField !== 'angle') return;
+        if (this.activeField !== 'angle' || this.angleLocked) return;
 
         const pointer = this.scene.input.activePointer;
         const turret = this.scene.turret;
@@ -565,6 +594,7 @@ export class MissileLaunchInput {
     refreshDisplay() {
         const angleDisplay = this.angleBuffer === '' ? '_' : this.angleBuffer;
         this.angleValueText.setText(angleDisplay);
+        this.angleValueText.setColor(this.angleLocked ? '#4ade80' : '#f8fafc');
 
         const liveVelocity = this.getLiveVelocity();
         const velSuffix = this.velocityLocked ? ' LOCKED' : '';
