@@ -10,6 +10,9 @@ const ROW_GAP = 10;
 const VEL_SECTION_H = 72;
 const VEL_MIN = 10;
 const VEL_MAX = 120;
+const VEL_SCALE_MAX = 120;
+const VEL_SCALE_LABELS = [0, 20, 40, 60, 80, 100, 120];
+const VEL_TICK_COUNT = 12; // 12 × 10 m/s steps from 0 to 120
 /** Full round-trip duration (start → end → start), milliseconds. */
 const VEL_SWEEP_CYCLE_MS = 2200;
 
@@ -124,14 +127,17 @@ export class MissileLaunchInput {
         this.velocityTrackGfx = scene.add.graphics();
         this.velocityTrackGfx.setPosition(PANEL_PAD, this.velocitySectionY);
 
-        this.velocityMinText = scene.add.text(0, 0, `${VEL_MIN}`, tickStyle);
-        this.velocityMidText = scene.add.text(0, 0, `${(VEL_MIN + VEL_MAX) / 2}`, tickStyle);
-        this.velocityMaxText = scene.add.text(0, 0, `${VEL_MAX}`, tickStyle);
-        this.velocityMinText.setOrigin(0, 0);
-        this.velocityMidText.setOrigin(0.5, 0);
-        this.velocityMaxText.setOrigin(1, 0);
-
-        this.velocityValueText = scene.add.text(PANEL_PAD + 10, this.velocitySectionY + 48, '', bodyStyle);
+        this.velocityScaleLabels = VEL_SCALE_LABELS.map((value) => {
+            const text = scene.add.text(0, 0, `${value}`, tickStyle);
+            if (value === 0) {
+                text.setOrigin(0, 0);
+            } else if (value === VEL_SCALE_MAX) {
+                text.setOrigin(1, 0);
+            } else {
+                text.setOrigin(0.5, 0);
+            }
+            return { value, text };
+        });
 
         this.angleLabelText = scene.add.text(PANEL_PAD + 10, this.angleRowY + 7, 'Angle (deg)', labelStyle);
         const valueX = panelW - PANEL_PAD - 10;
@@ -164,9 +170,10 @@ export class MissileLaunchInput {
         this.trackH = 14;
 
         const tickY = this.velocitySectionY + this.trackY + this.trackH + 2;
-        this.velocityMinText.setPosition(PANEL_PAD + this.trackLeft, tickY);
-        this.velocityMidText.setPosition(PANEL_PAD + this.trackLeft + this.trackWidth / 2, tickY);
-        this.velocityMaxText.setPosition(PANEL_PAD + this.trackLeft + this.trackWidth, tickY);
+        this.velocityScaleLabels.forEach(({ value, text }) => {
+            const x = PANEL_PAD + this.trackLeft + (this.trackWidth * value) / VEL_SCALE_MAX;
+            text.setPosition(x, tickY);
+        });
 
         this.container.add([
             bg,
@@ -176,10 +183,7 @@ export class MissileLaunchInput {
             this.velocityLabelText,
             this.velocityHintText,
             this.velocityTrackGfx,
-            this.velocityMinText,
-            this.velocityMidText,
-            this.velocityMaxText,
-            this.velocityValueText,
+            ...this.velocityScaleLabels.map(({ text }) => text),
             this.angleLabelText,
             this.angleValueText,
             this.errorLabel,
@@ -532,11 +536,10 @@ export class MissileLaunchInput {
         g.lineStyle(1, active ? 0x38bdf8 : 0x475569, active ? 0.9 : 0.55);
         g.strokeRoundedRect(left, top, w, h, 4);
 
-        // Scale ticks
-        const tickCount = 11;
-        for (let i = 0; i <= tickCount; i += 1) {
-            const x = left + (w * i) / tickCount;
-            const major = i % 5 === 0;
+        // Scale ticks every 10 m/s; majors at 0, 20, 40, 60, 80, 100, 120
+        for (let i = 0; i <= VEL_TICK_COUNT; i += 1) {
+            const x = left + (w * i) / VEL_TICK_COUNT;
+            const major = i % 2 === 0;
             g.lineStyle(1, major ? 0x94a3b8 : 0x475569, major ? 0.9 : 0.55);
             g.beginPath();
             g.moveTo(x, top);
@@ -544,10 +547,8 @@ export class MissileLaunchInput {
             g.strokePath();
         }
 
-        const progress = this.velocityLocked
-            ? (Number(this.velocityBuffer) - VEL_MIN) / (VEL_MAX - VEL_MIN)
-            : this.getSweepProgress();
-        const markerX = left + Phaser.Math.Clamp(progress, 0, 1) * w;
+        const velocity = this.velocityLocked ? Number(this.velocityBuffer) : this.getLiveVelocity();
+        const markerX = left + Phaser.Math.Clamp(velocity / VEL_SCALE_MAX, 0, 1) * w;
 
         // Fill behind marker
         g.fillStyle(this.velocityLocked ? 0x22c55e : 0x38bdf8, this.velocityLocked ? 0.35 : 0.22);
@@ -567,8 +568,6 @@ export class MissileLaunchInput {
 
         const liveVelocity = this.getLiveVelocity();
         const velSuffix = this.velocityLocked ? ' LOCKED' : '';
-        this.velocityValueText.setText(`${liveVelocity}${velSuffix}`);
-        this.velocityValueText.setColor(this.velocityLocked ? '#4ade80' : '#f8fafc');
         this.velocityHintText.setText(this.velocityLocked ? 'SPACE to unlock' : 'SPACE to lock');
 
         const drawRow = (g, active, height) => {
