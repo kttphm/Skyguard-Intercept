@@ -5,6 +5,7 @@ const COLORS = {
     muted: '#94a3b8',
     cyan: 0x38bdf8,
     amber: 0xf59e0b,
+    orange: 0xf97316,
     red: 0xfb7185,
     green: 0x4ade80,
     panel: 0x0c1224
@@ -70,11 +71,10 @@ export default class Solution extends Phaser.Scene {
 
         const dome = this.add.image(370, this.worldBottom, 'dome').setScale(0.56).setOrigin(0.5, 1);
         dome.setAlpha(0.5).setDepth(1);
-        this.add.image(370, this.worldBottom, 'minInterceptDome').setScale(0.56).setOrigin(0.5, 1).setAlpha(0.35).setDepth(1);
 
-        this.turretPoint = { x: 370, y: this.worldBottom - 2 };
+        this.turretPoint = { x: 370, y: this.worldBottom - 28 };
         this.add.image(this.turretPoint.x, this.turretPoint.y, 'turretbase').setDepth(3);
-        this.add.image(this.turretPoint.x, this.turretPoint.y - 18, 'turrettop').setAngle(-38).setDepth(3);
+        this.add.image(this.turretPoint.x + 29, this.turretPoint.y - 18, 'turrettop').setAngle(45).setDepth(3);
 
         const positions = [
             this.solverInputs.missilePos,
@@ -89,11 +89,13 @@ export default class Solution extends Phaser.Scene {
         this.interceptPoint = this.toDiagramPoint(this.solverInputs.interceptPos);
 
         this.enemy = this.add.image(this.missilePoint.x, this.missilePoint.y, 'enemy')
-            .setScale(0.42).setDepth(4).setAlpha(0);
-        this.interceptMarker = this.add.circle(this.interceptPoint.x, this.interceptPoint.y, 9, COLORS.amber, 1)
+            .setScale(0.42).setTint(COLORS.orange).setDepth(4).setAlpha(0);
+        this.missileMarker = this.add.circle(this.missilePoint.x, this.missilePoint.y, 9, COLORS.orange, 1)
+            .setStrokeStyle(2, 0xfff7ed).setDepth(4).setAlpha(0);
+        this.interceptMarker = this.add.circle(this.interceptPoint.x, this.interceptPoint.y, 9, COLORS.red, 1)
             .setStrokeStyle(2, 0xfff7ed).setDepth(4).setAlpha(0);
         this.add.text(this.interceptPoint.x + 12, this.interceptPoint.y - 8, 'INTERCEPT', {
-            fontFamily: 'Arial', fontSize: '12px', color: '#fef3c7', fontStyle: 'bold'
+            fontFamily: 'Arial', fontSize: '12px', color: '#fecdd3', fontStyle: 'bold'
         }).setDepth(5).setAlpha(0).setName('interceptLabel');
 
         this.vectorGraphics = this.add.graphics().setDepth(5);
@@ -198,7 +200,7 @@ export default class Solution extends Phaser.Scene {
         const { missilePos, interceptPos, missileVel } = this.solverInputs;
         const c = this.calculations;
         const stageText = [
-            `1. Locate the intercept\n\nMissile: (${format(missilePos.x)}, ${format(missilePos.y)}) m\nIntercept: (${format(interceptPos.x)}, ${format(interceptPos.y)}) m\n\nThe amber point is where the missile will be met.`,
+            `1. Locate the intercept\n\nMissile: (${format(missilePos.x)}, ${format(missilePos.y)}) m\nIntercept: (${format(interceptPos.x)}, ${format(interceptPos.y)}) m\n\nThe red point is where the missile will be met.`,
             `2. Find time until intercept\n\nΔx = x₂ - x₁\nΔx = ${format(interceptPos.x)} - ${format(missilePos.x)}\n   = ${format(c.deltaX)} m\n\ns = vt\nt = s / v\nt = ${format(c.distance)} / ${format(c.enemySpeedX)}\n  = ${format(c.time)} s`,
             `3. Find horizontal launch velocity\n\ns = vt\nv = s / t\nv = ${format(interceptPos.x)} / ${format(c.time)}\n  = ${format(c.launchVx)} m/s`,
             `4. Find vertical launch velocity\n\ns = ut + ½at²\nu = (s - ½at²) / t\n\nu = (${format(interceptPos.y)} - 0.5 × ${format(c.gravity)} × ${format(c.time)}²) / ${format(c.time)}\nu = ${format(c.launchVy)} m/s`,
@@ -215,50 +217,62 @@ export default class Solution extends Phaser.Scene {
     drawStage() {
         const stage = this.stage;
         const c = this.calculations;
-        this.enemy.setAlpha(stage >= 1 ? 1 : 0);
+        this.enemy.setAlpha(0);
+        this.missileMarker.setAlpha(stage < 2 ? 1 : 0);
         this.interceptMarker.setAlpha(stage >= 0 ? 1 : 0);
         this.worldLabels.getChildren().forEach((label) => label.destroy());
-        this.worldLabels.add(this.add.text(this.missilePoint.x + 12, this.missilePoint.y - 22, 'MISSILE', {
-            fontFamily: 'Arial', fontSize: '12px', color: '#fecdd3', fontStyle: 'bold'
-        }).setAlpha(stage >= 1 ? 1 : 0).setDepth(6));
-        this.worldLabels.add(this.add.text(this.turretPoint.x - 42, this.turretPoint.y + 10, 'TURRET', {
-            fontFamily: 'Arial', fontSize: '12px', color: COLORS.ink
-        }).setDepth(6));
 
         this.vectorGraphics.clear();
         this.equationGraphics.clear();
-        if (stage >= 1) this.drawDeltaX();
-        if (stage >= 1) this.drawEnemyVelocity(c);
-        if (stage >= 2) this.drawLaunchVector(c, stage >= 4 ? COLORS.green : COLORS.cyan);
+        if (stage === 1) this.drawDeltaX();
+        if (stage === 1) this.drawEnemyVelocityX(c);
+        if (stage === 2) this.drawLaunchVelocityX(c);
+        if (stage === 3) {
+            this.drawLaunchVelocityX(c);
+            this.drawLaunchVelocityY(c);
+        }
         if (stage >= 4) this.drawResultant(c);
     }
 
     drawDeltaX() {
-        const y = this.missilePoint.y + 28;
+        const y = this.missilePoint.y + 40;
         this.vectorGraphics.lineStyle(2, COLORS.amber, 1);
         this.vectorGraphics.lineBetween(this.missilePoint.x, y, this.interceptPoint.x, y);
         this.vectorGraphics.lineBetween(this.missilePoint.x, y - 7, this.missilePoint.x, y + 7);
         this.vectorGraphics.lineBetween(this.interceptPoint.x, y - 7, this.interceptPoint.x, y + 7);
-        this.worldLabels.add(this.add.text((this.missilePoint.x + this.interceptPoint.x) / 2, y + 10, `delta x = ${format(this.calculations.deltaX)} m`, {
+        this.worldLabels.add(this.add.text((this.missilePoint.x + this.interceptPoint.x) / 2, y + 10, `Δx = ${format(this.calculations.deltaX)} m`, {
             fontFamily: 'Arial', fontSize: '13px', color: '#fef3c7'
         }).setOrigin(0.5, 0).setDepth(6));
     }
 
-    drawEnemyVelocity(c) {
+    drawEnemyVelocityX(c) {
         const velocity = this.solverInputs.missileVel;
         this.drawArrow(this.missilePoint, {
             x: this.missilePoint.x + velocity.x * this.diagramScale * 2,
-            y: this.missilePoint.y - velocity.y * this.diagramScale * 2
+            y: this.missilePoint.y
         }, COLORS.red);
-        this.worldLabels.add(this.add.text(this.missilePoint.x + 18, this.missilePoint.y + 18, `enemy v = (${format(this.solverInputs.missileVel.x)}, ${format(this.solverInputs.missileVel.y)}) m/s`, {
+        this.worldLabels.add(this.add.text(this.missilePoint.x + 18, this.missilePoint.y + 18, `vₓ = ${format(velocity.x)} m/s`, {
             fontFamily: 'Arial', fontSize: '12px', color: '#fecdd3'
         }).setDepth(6));
     }
 
-    drawLaunchVector(c, color) {
-        this.drawArrow(this.turretPoint, this.interceptPoint, color);
-        this.worldLabels.add(this.add.text(this.turretPoint.x + 12, this.turretPoint.y - 64, 'launch velocity', {
-            fontFamily: 'Arial', fontSize: '12px', color: color === COLORS.green ? '#bbf7d0' : '#bae6fd'
+    drawLaunchVelocityX(c) {
+        this.drawArrow(this.turretPoint, {
+            x: this.turretPoint.x + c.launchVx * this.diagramScale * 2,
+            y: this.turretPoint.y
+        }, COLORS.cyan);
+        this.worldLabels.add(this.add.text(this.turretPoint.x + 12, this.turretPoint.y - 64, `launch vx = ${format(c.launchVx)} m/s`, {
+            fontFamily: 'Arial', fontSize: '12px', color: '#bae6fd'
+        }).setDepth(6));
+    }
+
+    drawLaunchVelocityY(c) {
+        this.drawArrow(this.turretPoint, {
+            x: this.turretPoint.x,
+            y: this.turretPoint.y - c.launchVy * this.diagramScale * 2
+        }, COLORS.amber);
+        this.worldLabels.add(this.add.text(this.turretPoint.x + 12, this.turretPoint.y - 92, `launch vy = ${format(c.launchVy)} m/s`, {
+            fontFamily: 'Arial', fontSize: '12px', color: '#fef3c7'
         }).setDepth(6));
     }
 
