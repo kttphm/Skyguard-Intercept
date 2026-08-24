@@ -220,12 +220,14 @@ export default class Solution extends Phaser.Scene {
         this.enemy.setAlpha(0);
         this.missileMarker.setAlpha(stage < 2 ? 1 : 0);
         this.interceptMarker.setAlpha(stage >= 0 ? 1 : 0);
-        this.worldLabels.getChildren().forEach((label) => label.destroy());
+        this.worldLabels.clear(true, true);
 
         this.vectorGraphics.clear();
         this.equationGraphics.clear();
-        if (stage === 1) this.drawDeltaX();
-        if (stage === 1) this.drawEnemyVelocityX(c);
+        if (stage === 1) {
+            this.drawDeltaX();
+            this.drawEnemyVelocityX(c);
+        }
         if (stage === 2) this.drawLaunchVelocityX(c);
         if (stage === 3) {
             this.drawLaunchVelocityX(c);
