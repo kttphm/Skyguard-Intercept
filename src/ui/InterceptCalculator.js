@@ -326,6 +326,15 @@ export class InterceptCalculator {
         }
     }
 
+    clear() {
+        this.buffers = Object.fromEntries(FIELDS.map((field) => [field.id, '']));
+        this.activeField = 'mx';
+        this.errorText = '';
+        this.resultText = '';
+        this.clearGuideState();
+        this.refreshDisplay();
+    }
+
     hasFieldFocus() {
         return this.activeField !== null;
     }

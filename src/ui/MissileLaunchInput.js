@@ -390,6 +390,7 @@ export class MissileLaunchInput {
 
         if (this.angleLocked && this.velocityLocked) {
             this.scene.turret.launchMissileAt(Number(this.angleBuffer), Number(this.velocityBuffer));
+            this.scene.interceptCalculator?.clear();
             this.hide();
             return;
         }
