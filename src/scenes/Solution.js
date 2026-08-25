@@ -274,13 +274,13 @@ export default class Solution extends Phaser.Scene {
             return;
         }
 
-        const x = this.interceptPoint.x + 25;
+        const x = this.interceptPoint.x >= this.turretPoint.x - 40 && this.interceptPoint.x <= this.turretPoint.x + 40 ? this.turretPoint.x - 40 : this.interceptPoint.x - 40;
         this.vectorGraphics.lineBetween(x, this.turretPoint.y, x, this.interceptPoint.y);
         this.vectorGraphics.lineBetween(x - 7, this.turretPoint.y, x + 7, this.turretPoint.y);
         this.vectorGraphics.lineBetween(x - 7, this.interceptPoint.y, x + 7, this.interceptPoint.y);
-        this.worldLabels.add(this.add.text(x + 10, (this.turretPoint.y + this.interceptPoint.y) / 2, label, {
+        this.worldLabels.add(this.add.text(x - 10, (this.turretPoint.y + this.interceptPoint.y) / 2, label, {
             fontFamily: 'Arial', fontSize: '13px', color: '#fef3c7'
-        }).setOrigin(0, 0.5).setDepth(6));
+        }).setOrigin(1, 0.5).setDepth(6));
     }
 
     drawEnemyVelocityX(c) {
@@ -288,12 +288,12 @@ export default class Solution extends Phaser.Scene {
         this.drawArrow(this.missilePoint, {
             x: this.missilePoint.x + velocity.x * this.diagramScale / 5,
             y: this.missilePoint.y
-        }, COLORS.red);
+        }, COLORS.cyan);
 
         const labelX = this.missilePoint.x + velocity.x * this.diagramScale / 2.5;
         const labelY = this.missilePoint.y - 30;
         this.worldLabels.add(this.add.text(labelX, labelY, `vₓ = ${format(velocity.x)} m/s`, {
-            fontFamily: 'Arial', fontSize: '12px', color: '#fecdd3'
+            fontFamily: 'Arial', fontSize: '12px', color: '#bae6fd'
         }).setDepth(6));
     }
 
@@ -301,9 +301,9 @@ export default class Solution extends Phaser.Scene {
         this.drawArrow(this.turretPoint, {
             x: this.turretPoint.x + c.launchVx * this.diagramScale / 3,
             y: this.turretPoint.y
-        }, COLORS.cyan);
+        }, COLORS.red);
         this.worldLabels.add(this.add.text(this.turretPoint.x + 12, this.turretPoint.y - 64, `vₓ = ${format(c.launchVx)} m/s`, {
-            fontFamily: 'Arial', fontSize: '12px', color: '#bae6fd'
+            fontFamily: 'Arial', fontSize: '12px', color: '#fecdd3'
         }).setDepth(6));
     }
 
