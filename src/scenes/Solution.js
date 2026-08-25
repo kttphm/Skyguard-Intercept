@@ -201,7 +201,7 @@ export default class Solution extends Phaser.Scene {
         const c = this.calculations;
         const stageText = [
             `1. Locate the intercept\n\nMissile: (${format(missilePos.x)}, ${format(missilePos.y)}) m\nIntercept: (${format(interceptPos.x)}, ${format(interceptPos.y)}) m\n\nThe red point is where the missile will be met.\nThe orange point is where the missile is currently located.`,
-            `2. Find time until intercept\n\nΔx = x₂ - x₁\nΔx = ${format(interceptPos.x)} - ${format(missilePos.x)}\n   = ${format(c.deltaX)} m\n\ns = vt\nt = s / v\nt = ${format(c.distance)} / ${format(c.enemySpeedX)}\n  = ${format(c.time)} s`,
+            `2. Find time until intercept\n\nΔx = x₂ - x₁\nΔx = ${format(interceptPos.x)} - ${format(missilePos.x)}\n   = ${format(c.deltaX)} m\n\ns = vt\nt = s / v\nt = ${format(c.deltaX)} / ${format(c.enemySpeedX)}\n  = ${format(c.time)} s`,
             `3. Find horizontal launch velocity\n\ns = vt\nv = s / t\nv = ${format(interceptPos.x)} / ${format(c.time)}\n  = ${format(c.launchVx)} m/s`,
             `4. Find vertical launch velocity\n\ns = ut + ½at²\nu = (s - ½at²) / t\n\nu = (${format(interceptPos.y)} - 0.5 × ${format(c.gravity)} × ${format(c.time)}²) / ${format(c.time)}\nu = ${format(c.launchVy)} m/s`,
             `5. Add the velocity components\n\nVelocity vector = (vₓ, vᵧ)\n                = (${format(c.launchVx)}, ${format(c.launchVy)}) m/s\n\nv = √(vₓ² + vᵧ²)\nv = ${format(c.speed)} m/s`,
@@ -274,7 +274,7 @@ export default class Solution extends Phaser.Scene {
             return;
         }
 
-        const x = this.interceptPoint.x >= this.turretPoint.x - 40 && this.interceptPoint.x <= this.turretPoint.x + 40 ? this.turretPoint.x - 40 : this.interceptPoint.x - 40;
+        const x = (this.interceptPoint.x >= this.turretPoint.x - 40 && this.interceptPoint.x <= this.turretPoint.x + 40) ? this.turretPoint.x - 40 : (this.interceptPoint.x > this.turretPoint.x) ? this.interceptPoint.x + 40 : this.turretPoint.x - 40;
         this.vectorGraphics.lineBetween(x, this.turretPoint.y, x, this.interceptPoint.y);
         this.vectorGraphics.lineBetween(x - 7, this.turretPoint.y, x + 7, this.turretPoint.y);
         this.vectorGraphics.lineBetween(x - 7, this.interceptPoint.y, x + 7, this.interceptPoint.y);
