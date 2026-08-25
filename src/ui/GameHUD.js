@@ -121,8 +121,8 @@ export class GameHUD {
         const missileY = Math.round((GameMath.toShiftedY(enemy.y, h, scene.shiftOriginY) / ppm) * 100) / 100;
         const vx = Math.round((enemy._savedVelocityX / ppm) * 100) / 100;
         const vy = Math.round((-enemy._savedVelocityY / ppm) * 100) / 100;
-        const vxShown = Math.round(vx);
-        const vyShown = Math.round(vy);
+        const vxShown = Math.round(vx * 100) / 100;
+        const vyShown = Math.round(vy * 100) / 100;
 
         let interceptX = null;
         let interceptY = null;

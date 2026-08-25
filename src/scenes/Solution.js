@@ -274,7 +274,7 @@ export default class Solution extends Phaser.Scene {
             return;
         }
 
-        const x = (this.interceptPoint.x >= this.turretPoint.x - 40 && this.interceptPoint.x <= this.turretPoint.x + 40) ? this.turretPoint.x - 40 : (this.interceptPoint.x > this.turretPoint.x) ? this.interceptPoint.x + 40 : this.turretPoint.x - 40;
+        const x = (this.interceptPoint.x >= this.turretPoint.x - 40 && this.interceptPoint.x <= this.turretPoint.x + 40) ? this.turretPoint.x - 40 : (this.interceptPoint.x > this.turretPoint.x) ? this.interceptPoint.x + 40 : this.interceptPoint.x - 40;
         this.vectorGraphics.lineBetween(x, this.turretPoint.y, x, this.interceptPoint.y);
         this.vectorGraphics.lineBetween(x - 7, this.turretPoint.y, x + 7, this.turretPoint.y);
         this.vectorGraphics.lineBetween(x - 7, this.interceptPoint.y, x + 7, this.interceptPoint.y);
