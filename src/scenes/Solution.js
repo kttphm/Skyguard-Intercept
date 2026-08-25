@@ -228,10 +228,14 @@ export default class Solution extends Phaser.Scene {
             this.drawDeltaX();
             this.drawEnemyVelocityX(c);
         }
-        if (stage === 2) this.drawLaunchVelocityX(c);
+        if (stage === 2) {
+            this.drawLaunchVelocityX(c);
+            this.drawLaunchDistance(c, 'x');
+        }
         if (stage === 3) {
             this.drawLaunchVelocityX(c);
             this.drawLaunchVelocityY(c);
+            this.drawLaunchDistance(c, 'y');
         }
         if (stage >= 4) this.drawResultant(c);
         if (stage >= 1 && stage <= 3) this.drawTimeLabel(c);
@@ -252,6 +256,31 @@ export default class Solution extends Phaser.Scene {
         this.worldLabels.add(this.add.text((this.missilePoint.x + this.interceptPoint.x) / 2, y + 10, `Δx = ${format(this.calculations.deltaX)} m`, {
             fontFamily: 'Arial', fontSize: '13px', color: '#fef3c7'
         }).setOrigin(0.5, 0).setDepth(6));
+    }
+
+    drawLaunchDistance(c, axis) {
+        const value = axis === 'x' ? this.solverInputs.interceptPos.x : this.solverInputs.interceptPos.y;
+        const label = `s = ${format(value)} m`;
+        this.vectorGraphics.lineStyle(2, COLORS.amber, 1);
+
+        if (axis === 'x') {
+            const y = this.turretPoint.y + 25;
+            this.vectorGraphics.lineBetween(this.turretPoint.x, y, this.interceptPoint.x, y);
+            this.vectorGraphics.lineBetween(this.turretPoint.x, y - 7, this.turretPoint.x, y + 7);
+            this.vectorGraphics.lineBetween(this.interceptPoint.x, y - 7, this.interceptPoint.x, y + 7);
+            this.worldLabels.add(this.add.text((this.turretPoint.x + this.interceptPoint.x) / 2, y + 10, label, {
+                fontFamily: 'Arial', fontSize: '13px', color: '#fef3c7'
+            }).setOrigin(0.5, 0).setDepth(6));
+            return;
+        }
+
+        const x = this.interceptPoint.x + 25;
+        this.vectorGraphics.lineBetween(x, this.turretPoint.y, x, this.interceptPoint.y);
+        this.vectorGraphics.lineBetween(x - 7, this.turretPoint.y, x + 7, this.turretPoint.y);
+        this.vectorGraphics.lineBetween(x - 7, this.interceptPoint.y, x + 7, this.interceptPoint.y);
+        this.worldLabels.add(this.add.text(x + 10, (this.turretPoint.y + this.interceptPoint.y) / 2, label, {
+            fontFamily: 'Arial', fontSize: '13px', color: '#fef3c7'
+        }).setOrigin(0, 0.5).setDepth(6));
     }
 
     drawEnemyVelocityX(c) {
