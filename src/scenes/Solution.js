@@ -84,7 +84,7 @@ export default class Solution extends Phaser.Scene {
             40,
             ...positions.flatMap((point) => [Math.abs(point.x), Math.abs(point.y)])
         );
-        this.diagramScale = Math.min(4.5, 245 / maxValue);
+        this.diagramScale = (370 / 580) * 16.3;
         this.missilePoint = this.toDiagramPoint(this.solverInputs.missilePos);
         this.interceptPoint = this.toDiagramPoint(this.solverInputs.interceptPos);
 
@@ -200,7 +200,7 @@ export default class Solution extends Phaser.Scene {
         const { missilePos, interceptPos, missileVel } = this.solverInputs;
         const c = this.calculations;
         const stageText = [
-            `1. Locate the intercept\n\nMissile: (${format(missilePos.x)}, ${format(missilePos.y)}) m\nIntercept: (${format(interceptPos.x)}, ${format(interceptPos.y)}) m\n\nThe red point is where the missile will be met.`,
+            `1. Locate the intercept\n\nMissile: (${format(missilePos.x)}, ${format(missilePos.y)}) m\nIntercept: (${format(interceptPos.x)}, ${format(interceptPos.y)}) m\n\nThe red point is where the missile will be met.\nThe orange point is where the missile is currently located.`,
             `2. Find time until intercept\n\nΔx = x₂ - x₁\nΔx = ${format(interceptPos.x)} - ${format(missilePos.x)}\n   = ${format(c.deltaX)} m\n\ns = vt\nt = s / v\nt = ${format(c.distance)} / ${format(c.enemySpeedX)}\n  = ${format(c.time)} s`,
             `3. Find horizontal launch velocity\n\ns = vt\nv = s / t\nv = ${format(interceptPos.x)} / ${format(c.time)}\n  = ${format(c.launchVx)} m/s`,
             `4. Find vertical launch velocity\n\ns = ut + ½at²\nu = (s - ½at²) / t\n\nu = (${format(interceptPos.y)} - 0.5 × ${format(c.gravity)} × ${format(c.time)}²) / ${format(c.time)}\nu = ${format(c.launchVy)} m/s`,
@@ -234,10 +234,17 @@ export default class Solution extends Phaser.Scene {
             this.drawLaunchVelocityY(c);
         }
         if (stage >= 4) this.drawResultant(c);
+        if (stage >= 1 && stage <= 3) this.drawTimeLabel(c);
+    }
+
+    drawTimeLabel(c) {
+        this.worldLabels.add(this.add.text(this.worldLeft + 14, this.worldTop + 216, `t = ${format(c.time)} s`, {
+            fontFamily: 'Arial', fontSize: '13px', color: '#fef3c7', fontStyle: 'bold'
+        }).setDepth(6));
     }
 
     drawDeltaX() {
-        const y = this.missilePoint.y + 40;
+        const y = this.interceptPoint.y + 25;
         this.vectorGraphics.lineStyle(2, COLORS.amber, 1);
         this.vectorGraphics.lineBetween(this.missilePoint.x, y, this.interceptPoint.x, y);
         this.vectorGraphics.lineBetween(this.missilePoint.x, y - 7, this.missilePoint.x, y + 7);
@@ -250,20 +257,23 @@ export default class Solution extends Phaser.Scene {
     drawEnemyVelocityX(c) {
         const velocity = this.solverInputs.missileVel;
         this.drawArrow(this.missilePoint, {
-            x: this.missilePoint.x + velocity.x * this.diagramScale * 2,
+            x: this.missilePoint.x + velocity.x * this.diagramScale / 5,
             y: this.missilePoint.y
         }, COLORS.red);
-        this.worldLabels.add(this.add.text(this.missilePoint.x + 18, this.missilePoint.y + 18, `vₓ = ${format(velocity.x)} m/s`, {
+
+        const labelX = this.missilePoint.x + velocity.x * this.diagramScale / 2.5;
+        const labelY = this.missilePoint.y - 30;
+        this.worldLabels.add(this.add.text(labelX, labelY, `vₓ = ${format(velocity.x)} m/s`, {
             fontFamily: 'Arial', fontSize: '12px', color: '#fecdd3'
         }).setDepth(6));
     }
 
     drawLaunchVelocityX(c) {
         this.drawArrow(this.turretPoint, {
-            x: this.turretPoint.x + c.launchVx * this.diagramScale * 2,
+            x: this.turretPoint.x + c.launchVx * this.diagramScale / 3,
             y: this.turretPoint.y
         }, COLORS.cyan);
-        this.worldLabels.add(this.add.text(this.turretPoint.x + 12, this.turretPoint.y - 64, `launch vx = ${format(c.launchVx)} m/s`, {
+        this.worldLabels.add(this.add.text(this.turretPoint.x + 12, this.turretPoint.y - 64, `vₓ = ${format(c.launchVx)} m/s`, {
             fontFamily: 'Arial', fontSize: '12px', color: '#bae6fd'
         }).setDepth(6));
     }
@@ -271,16 +281,19 @@ export default class Solution extends Phaser.Scene {
     drawLaunchVelocityY(c) {
         this.drawArrow(this.turretPoint, {
             x: this.turretPoint.x,
-            y: this.turretPoint.y - c.launchVy * this.diagramScale * 2
+            y: this.turretPoint.y - c.launchVy * this.diagramScale / 3
         }, COLORS.amber);
-        this.worldLabels.add(this.add.text(this.turretPoint.x + 12, this.turretPoint.y - 92, `launch vy = ${format(c.launchVy)} m/s`, {
+        this.worldLabels.add(this.add.text(this.turretPoint.x + 12, this.turretPoint.y - 92, `vᵧ = ${format(c.launchVy)} m/s`, {
             fontFamily: 'Arial', fontSize: '12px', color: '#fef3c7'
         }).setDepth(6));
     }
 
     drawResultant(c) {
-        const end = { x: this.turretPoint.x + c.launchVx * this.diagramScale * 2, y: this.turretPoint.y - c.launchVy * this.diagramScale * 2 };
+        const end = { x: this.turretPoint.x + c.launchVx * this.diagramScale / 3, y: this.turretPoint.y - c.launchVy * this.diagramScale / 3 };
         this.drawArrow(this.turretPoint, end, COLORS.green);
+        this.worldLabels.add(this.add.text(end.x + 12, end.y - 10, `v = ${format(c.speed)} m/s`, {
+            fontFamily: 'Arial', fontSize: '12px', color: '#bbf7d0', fontStyle: 'bold'
+        }).setDepth(6));
     }
 
     drawArrow(start, end, color) {
